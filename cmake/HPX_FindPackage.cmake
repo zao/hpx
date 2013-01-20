@@ -67,6 +67,10 @@ macro(hpx_find_headers name)
 endmacro()
 
 macro(hpx_find_package name)
+
+  hpx_parse_arguments(${name}
+    "HEADERS;HEADER_PATHS;LIBRARIES;LIBRARY_PATHS" "ESSENTIAL;NOLIBRARY" ${ARGN})
+
   if(${name}_DISABLE)
     hpx_info("find_package.${name}" "Library search disabled by user.")
 
@@ -76,12 +80,14 @@ macro(hpx_find_package name)
       string(REPLACE "\\" "/" ${name}_ROOT ${${name}_ROOT})
     endif()
 
-    if(NOT ${name}_LIBRARY)
-      set(${name}_LIBRARY ${name}_LIBRARY-NOTFOUND)
-    endif()
+    if(NOT ${NAME}_NOLIBRARY)
+      if(NOT ${name}_LIBRARY)
+        set(${name}_LIBRARY ${name}_LIBRARY-NOTFOUND)
+      endif()
 
-    if(NOT ${name}_LIBRARY_DIR)
-      set(${name}_LIBRARY_DIR ${name}_LIBRARY_DIR-NOTFOUND)
+      if(NOT ${name}_LIBRARY_DIR)
+        set(${name}_LIBRARY_DIR ${name}_LIBRARY_DIR-NOTFOUND)
+      endif()
     endif()
 
     if(NOT ${name}_INCLUDE_DIR)
@@ -91,15 +97,22 @@ macro(hpx_find_package name)
     set(${name}_FOUND OFF CACHE BOOL "Found ${name}.")
 
     set(${name}_ROOT ${${name}_ROOT} CACHE PATH "${name} root directory.")
-    set(${name}_LIBRARY ${${name}_LIBRARY} CACHE FILEPATH "${name} shared library.")
-    set(${name}_LIBRARY_DIR ${${name}_LIBRARY_DIR} CACHE PATH "${name} library directory.")
+    if(NOT ${NAME}_NOLIBRARY)
+      set(${name}_LIBRARY ${${name}_LIBRARY} CACHE FILEPATH "${name} shared library.")
+      set(${name}_LIBRARY_DIR ${${name}_LIBRARY_DIR} CACHE PATH "${name} library directory.")
+    endif()
     set(${name}_INCLUDE_DIR ${${name}_INCLUDE_DIR} CACHE PATH "${name} include directory.")
+
     mark_as_advanced(FORCE
       ${name}_FOUND
       ${name}_ROOT
-      ${name}_LIBRARY
-      ${name}_LIBRARY_DIR
       ${name}_INCLUDE_DIR)
+
+    if(NOT ${NAME}_NOLIBRARY)
+      mark_as_advanced(FORCE
+        ${name}_LIBRARY
+        ${name}_LIBRARY_DIR)
+    endif()
 
     set(${name}_SEARCHED ON CACHE INTERNAL "Searched for ${name} library.")
     set(${name}_HEADER_SEARCHED ON CACHE INTERNAL "Searched for ${name} library.")
@@ -111,28 +124,30 @@ macro(hpx_find_package name)
         hpx_find_headers(${name} ${ARGN})
       endif()
 
-      set(rooted_paths)
-      foreach(path ${${name}_LIBRARY_PATHS})
-        list(APPEND rooted_paths ${${name}_ROOT}/${path})
-      endforeach()
+      if(NOT ${NAME}_NOLIBRARY)
+        set(rooted_paths)
+        foreach(path ${${name}_LIBRARY_PATHS})
+          list(APPEND rooted_paths ${${name}_ROOT}/${path})
+        endforeach()
 
-      if(${name}_ROOT)
-        hpx_print_list("DEBUG" "find_package.${name}" "Library names" ${name}_LIBRARIES)
-        hpx_print_list("DEBUG" "find_package.${name}" "Library paths" rooted_paths)
-        find_library(${name}_LIBRARY
-          NAMES ${${name}_LIBRARIES}
-          PATHS ${rooted_paths}
-          NO_DEFAULT_PATH)
+        if(${name}_ROOT)
+          hpx_print_list("DEBUG" "find_package.${name}" "Library names" ${name}_LIBRARIES)
+          hpx_print_list("DEBUG" "find_package.${name}" "Library paths" rooted_paths)
+          find_library(${name}_LIBRARY
+            NAMES ${${name}_LIBRARIES}
+            PATHS ${rooted_paths}
+            NO_DEFAULT_PATH)
 
-        if(NOT ${name}_LIBRARY)
-          hpx_warn("find_package.${name}" "Library not found in ${${name}_ROOT}, trying system path.")
-        else()
-          hpx_info("find_package.${name}" "Library found in ${${name}_ROOT}.")
+          if(NOT ${name}_LIBRARY)
+            hpx_warn("find_package.${name}" "Library not found in ${${name}_ROOT}, trying system path.")
+          else()
+            hpx_info("find_package.${name}" "Library found in ${${name}_ROOT}.")
+          endif()
         endif()
       endif()
 
       # if not found, retry using system path
-      if(NOT ${name}_ROOT)
+      if(NOT ${name}_ROOT AND NOT ${NAME}_NOLIBRARY)
         hpx_print_list("DEBUG" "find_package.${name}" "Library names" ${name}_LIBRARIES)
         hpx_print_list("DEBUG" "find_package.${name}" "Library paths" ${name}_LIBRARY_PATHS)
         find_library(${name}_LIBRARY NAMES ${${name}_LIBRARIES}
@@ -164,12 +179,17 @@ macro(hpx_find_package name)
           set(${name}_ROOT ${name}_ROOT-NOTFOUND)
         endif()
 
-        if(NOT ${name}_LIBRARY)
-          set(${name}_LIBRARY ${name}_LIBRARY-NOTFOUND)
-        endif()
+        if(NOT ${NAME}_NOLIBRARY)
+          if(NOT ${name}_LIBRARY)
+            set(${name}_LIBRARY ${name}_LIBRARY-NOTFOUND)
+          endif()
 
-        if(NOT ${name}_LIBRARY_DIR)
-          set(${name}_LIBRARY_DIR ${name}_LIBRARY_DIR-NOTFOUND)
+          if(NOT ${name}_LIBRARY_DIR)
+            set(${name}_LIBRARY_DIR ${name}_LIBRARY_DIR-NOTFOUND)
+          endif()
+        else()
+          set(${name}_LIBRARY)
+          set(${name}_LIBRARY_DIR)
         endif()
 
         if(NOT ${name}_INCLUDE_DIR)
@@ -180,16 +200,22 @@ macro(hpx_find_package name)
       endif()
 
       set(${name}_ROOT ${${name}_ROOT} CACHE PATH "${name} root directory.")
-      set(${name}_LIBRARY ${${name}_LIBRARY} CACHE FILEPATH "${name} shared library.")
-      set(${name}_LIBRARY_DIR ${${name}_LIBRARY_DIR} CACHE PATH "${name} library directory.")
+      if(NOT ${NAME}_NOLIBRARY)
+        set(${name}_LIBRARY ${${name}_LIBRARY} CACHE FILEPATH "${name} shared library.")
+        set(${name}_LIBRARY_DIR ${${name}_LIBRARY_DIR} CACHE PATH "${name} library directory.")
+      endif()
       set(${name}_INCLUDE_DIR ${${name}_INCLUDE_DIR} CACHE PATH "${name} include directory.")
 
       mark_as_advanced(FORCE
         ${name}_FOUND
         ${name}_ROOT
-        ${name}_LIBRARY
-        ${name}_LIBRARY_DIR
         ${name}_INCLUDE_DIR)
+
+      if(NOT ${NAME}_NOLIBRARY)
+        mark_as_advanced(FORCE
+          ${name}_LIBRARY
+          ${name}_LIBRARY_DIR)
+      endif()
 
       set(${name}_SEARCHED ON CACHE INTERNAL "Searched for ${name} library.")
     endif()

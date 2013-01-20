@@ -104,7 +104,8 @@ namespace hpx
             connection_unknown = -1,
             connection_tcpip = 0,
             connection_shmem = 1,
-            connection_portals4 = 2,
+            connection_websocket = 2,
+            connection_portals4 = 3,
             connection_last
         };
 

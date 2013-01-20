@@ -104,7 +104,13 @@ namespace hpx { namespace util
 #else
             "endian_out=${HPX_ENDIAN_OUT:little}",
 #endif
-            "use_shmem_parcelport=${HPX_USE_SHMEM_PARCELPORT:0}",
+
+#if defined(HPX_USE_PARCELPORT_SHMEM)
+            "use_parcelport_shmem=${HPX_USE_PARCELPORT_SHMEM:0}",
+#endif
+#if defined(HPX_USE_PARCELPORT_EBSOCKET)
+            "use_parcelport_websocket=${HPX_USE_PARCELPORT_WEBSOCKET:0}",
+#endif
 
             // predefine command line aliases
             "[hpx.commandline]",

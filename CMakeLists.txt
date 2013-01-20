@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2012 Hartmut Kaiser
+# Copyright (c) 2007-2013 Hartmut Kaiser
 # Copyright (c) 2007-2008 Chirag Dekate
 # Copyright (c)      2011 Bryce Lelbach
 # Copyright (c)      2011 Vinay C Amatya
@@ -276,9 +276,21 @@ endif()
 # Decide whether to use shared memory based parcelport (starting with Boost V1.52)
 ################################################################################
 if(${BOOST_MINOR_VERSION} GREATER 51)
-  hpx_option(HPX_USE_SHMEM_PARCELPORT BOOL "Enable parcelport based on shared memory (default: OFF)." OFF ADVANCED)
-  if(HPX_USE_SHMEM_PARCELPORT)
-    add_definitions(-DHPX_USE_SHMEM_PARCELPORT)
+  hpx_option(HPX_USE_PARCELPORT_SHMEM BOOL "Enable parcelport based on shared memory (default: OFF)." OFF ADVANCED)
+  if(HPX_USE_PARCELPORT_SHMEM)
+    add_definitions(-DHPX_USE_PARCELPORT_SHMEM)
+  endif()
+endif()
+
+################################################################################
+# Decide whether to use websockets based parcelport
+################################################################################
+find_package(HPX_WebSocketPP)
+if(WEBSOCKETPP_FOUND)
+  hpx_option(HPX_USE_PARCELPORT_WEBSOCKETS BOOL "Enable parcelport based on websockets (default: OFF)." OFF ADVANCED)
+  if(HPX_USE_PARCELPORT_WEBSOCKETS)
+    hpx_include_sys_directories(${WEBSOCKETPP_INCLUDE_DIR})
+    add_definitions(-DHPX_USE_PARCELPORT_WEBSOCKETS)
   endif()
 endif()
 

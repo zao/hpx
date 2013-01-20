@@ -5,8 +5,11 @@
 
 #include <hpx/hpx_fwd.hpp>
 #include <hpx/runtime/parcelset/tcp/parcelport.hpp>
-#if defined(HPX_USE_SHMEM_PARCELPORT)
+#if defined(HPX_USE_PARCELPORT_SHMEM)
 #  include <hpx/runtime/parcelset/shmem/parcelport.hpp>
+#endif
+#if defined(HPX_USE_PARCELPORT_WEBSOCKET)
+#  include <hpx/runtime/parcelset/websocket/parcelport.hpp>
 #endif
 #include <hpx/util/io_service_pool.hpp>
 #include <hpx/util/runtime_configuration.hpp>
@@ -29,11 +32,11 @@ namespace hpx { namespace parcelset
 
         case connection_shmem:
             {
-#if defined(HPX_USE_SHMEM_PARCELPORT)
+#if defined(HPX_USE_PARCELPORT_SHMEM)
                 // Create shmem based parcelport only if allowed by the 
                 // configuration info.
                 std::string enable_shmem = 
-                    cfg.get_entry("hpx.parcel.use_shmem_parcelport", "0");
+                    cfg.get_entry("hpx.parcel.use_parcelport_shmem", "0");
 
                 if (boost::lexical_cast<int>(enable_shmem)) 
                 {
@@ -44,6 +47,18 @@ namespace hpx { namespace parcelset
                 HPX_THROW_EXCEPTION(bad_parameter, "parcelport::create",
                     "unsupported connection type 'connection_shmem'");
             }
+            break;
+
+        case connection_websocket:
+#if defined(HPX_USE_PARCELPORT_WEBSOCKET)
+                // Create websocket based parcelport only if allowed by the 
+                // configuration info.
+                std::string enable_shmem = 
+                    cfg.get_entry("hpx.parcel.use_parcelport_websocket", "0");
+
+#endif
+            HPX_THROW_EXCEPTION(bad_parameter, "parcelport::create",
+                "unsupported connection type 'connection_websocket'");
             break;
 
         case connection_portals4:

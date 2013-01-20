@@ -5,8 +5,8 @@
 
 #include <hpx/hpx_fwd.hpp>
 
-#if defined(HPX_USE_PARCELPORT_SHMEM)
-#include <hpx/runtime/parcelset/shmem/parcelport_connection.hpp>
+#if defined(HPX_USE_PARCELPORT_WEBSOCKETS)
+#include <hpx/runtime/parcelset/websocket/parcelport_connection.hpp>
 #include <hpx/util/portable_binary_oarchive.hpp>
 #include <hpx/util/stringstream.hpp>
 #include <hpx/traits/type_size.hpp>
@@ -19,22 +19,21 @@
 #include <stdexcept>
 
 ///////////////////////////////////////////////////////////////////////////////
-namespace hpx { namespace parcelset { namespace shmem
+namespace hpx { namespace parcelset { namespace websocket
 {
     parcelport_connection::parcelport_connection(
             boost::asio::io_service& io_service,
             naming::locality const& here, naming::locality const& there,
-            data_buffer_cache& cache,
+//             data_buffer_cache& cache,
             performance_counters::parcels::gatherer& parcels_sent,
             std::size_t connection_count)
-      : window_(io_service), there_(there),
-        parcels_sent_(parcels_sent), cache_(cache)
+      : /*window_(io_service), */there_(there),
+        parcels_sent_(parcels_sent)//, cache_(cache)
     {
-        std::string fullname(here.get_address() + "." +
-            boost::lexical_cast<std::string>(here.get_port()) + "." +
-            boost::lexical_cast<std::string>(connection_count));
-
-        window_.set_option(data_window::bound_to(fullname));
+//         std::string fullname(here.get_address() + "." +
+//             boost::lexical_cast<std::string>(here.get_port()) + "." +
+//             boost::lexical_cast<std::string>(connection_count));
+//         window_.set_option(data_window::bound_to(fullname));
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -61,9 +60,8 @@ namespace hpx { namespace parcelset { namespace shmem
             // generate the name for this data_buffer
             std::string data_buffer_name(pv[0].get_parcel_id().to_string());
 
-            // clear and preallocate out_buffer_ ( or fetch from cache)
-            out_buffer_ = get_data_buffer((arg_size * 12) / 10 + 1024,
-                data_buffer_name);
+            // clear out_buffer_
+            out_buffer_.clear();
 
             // mark start of serialization
             util::high_resolution_timer timer;
@@ -71,7 +69,7 @@ namespace hpx { namespace parcelset { namespace shmem
             {
                 // Serialize the data
                 util::portable_binary_oarchive archive(
-                    out_buffer_.get_buffer(), boost::archive::no_header);
+                    out_buffer_, boost::archive::no_header);
 
                 std::size_t count = pv.size();
                 archive << count;
@@ -90,7 +88,7 @@ namespace hpx { namespace parcelset { namespace shmem
             // serialization library as otherwise we will loose the
             // e.what() description of the problem.
             HPX_RETHROW_EXCEPTION(serialization_error,
-                "shmem::parcelport_connection::set_parcel",
+                "websocket::parcelport_connection::set_parcel",
                 boost::str(boost::format(
                     "parcelport: parcel serialization failed, caught "
                     "boost::archive::archive_exception: %s") % e.what()));
@@ -98,7 +96,7 @@ namespace hpx { namespace parcelset { namespace shmem
         }
         catch (boost::system::system_error const& e) {
             HPX_RETHROW_EXCEPTION(serialization_error,
-                "shmem::parcelport_connection::set_parcel",
+                "websocket::parcelport_connection::set_parcel",
                 boost::str(boost::format(
                     "parcelport: parcel serialization failed, caught "
                     "boost::system::system_error: %d (%s)") %
@@ -107,7 +105,7 @@ namespace hpx { namespace parcelset { namespace shmem
         }
         catch (std::exception const& e) {
             HPX_RETHROW_EXCEPTION(serialization_error,
-                "shmem::parcelport_connection::set_parcel",
+                "websocket::parcelport_connection::set_parcel",
                 boost::str(boost::format(
                     "parcelport: parcel serialization failed, caught "
                     "std::exception: %s") % e.what()));

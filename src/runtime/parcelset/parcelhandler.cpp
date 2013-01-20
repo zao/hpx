@@ -216,7 +216,7 @@ namespace hpx { namespace parcelset
     connection_type parcelhandler::find_appropriate_connection_type(
         naming::locality dest)
     {
-#if defined(HPX_USE_SHMEM_PARCELPORT)
+#if defined(HPX_USE_PARCELPORT_SHMEM)
         if (dest.get_type() == connection_tcpip) {
             // if destination is on the same network node, use shared memory
             // otherwise fall back to tcp
@@ -235,9 +235,9 @@ namespace hpx { namespace parcelset
     void parcelhandler::set_resolved_localities(
         std::vector<naming::locality> const& localities)
     {
-#if defined(HPX_USE_SHMEM_PARCELPORT)
+#if defined(HPX_USE_PARCELPORT_SHMEM)
         std::string enable_shmem =
-            get_config_entry("hpx.parcel.use_shmem_parcelport", "0");
+            get_config_entry("hpx.parcel.use_parcelport_shmem", "0");
 
         if (boost::lexical_cast<int>(enable_shmem)) {
             // we use the provided information to decide what types of parcel-ports
