@@ -897,14 +897,24 @@ else()
   # GCC-only configuration
   ##############################################################################
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(enable_visibility_hidden ON)
     if(040400 LESS ${GCC_VERSION})
+      # visibility can't be disabled for gcc < 4.4
+      set(enable_visibility_hidden OFF)
+    elseif(${GCC_VERSION} GREATER 040699 AND ${GCC_VERSION} LESS 040800)
+      # visibility is broken for gcc 4.7.x
+      set(enable_visibility_hidden OFF)
+    endif()
+
+    if(${enable_visibility_hidden})
       option(HPX_ELF_HIDDEN_VISIBILITY
         "Use -fvisibility=hidden for Release and MinSizeRel builds (default: ON)" ON)
 
       if(HPX_ELF_HIDDEN_VISIBILITY)
         if("${CMAKE_BUILD_TYPE}" STREQUAL "MinSizeRel" OR
-       "${CMAKE_BUILD_TYPE}" STREQUAL "Release" OR
-       "${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+           "${CMAKE_BUILD_TYPE}" STREQUAL "Release" OR
+           "${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+
           add_definitions(-DHPX_ELF_HIDDEN_VISIBILITY)
           add_definitions(-DHPX_COROUTINE_GCC_HAVE_VISIBILITY)
           add_definitions(-DHPX_PLUGIN_GCC_HAVE_VISIBILITY)
@@ -1002,7 +1012,9 @@ else()
   ##############################################################################
   # System libraries
   ##############################################################################
-  set(hpx_RUNTIME_LIBRARIES ${hpx_RUNTIME_LIBRARIES} dl)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+    set(hpx_RUNTIME_LIBRARIES ${hpx_RUNTIME_LIBRARIES} dl)
+  endif()
 
   if(NOT APPLE)
     set(hpx_RUNTIME_LIBRARIES ${hpx_RUNTIME_LIBRARIES} rt)
@@ -1364,7 +1376,7 @@ set(external_include_directories "")
 set(external_include_flags "")
 
 foreach(directory ${HPX_LINK_DIRECTORIES})
-  string(REPLACE " " "\\ " directory ${directory})
+  string(REGEX REPLACE "([ ()])" "\\\\\\1" directory "${directory}")
   set(external_link_directories "${external_link_directories} ${directory}")
   set(external_link_flags "${external_link_flags} -L${directory}")
   set(external_rpath "${external_rpath}:${directory}")
@@ -1380,7 +1392,7 @@ foreach(lib ${external_libraries})
 endforeach()
 
 foreach(directory ${HPX_INCLUDE_DIRECTORIES})
-  string(REPLACE " " "\\ " directory ${directory})
+  string(REGEX REPLACE "([ ()])" "\\\\\\1" directory "${directory}")
   set(external_include_directories "${external_include_directories} ${directory}")
   set(external_include_flags "${external_include_flags} -I${directory}")
 endforeach()
@@ -1389,7 +1401,7 @@ set(boost_library_info "")
 
 foreach(library ${BOOST_LIBRARIES})
   string(TOUPPER ${library} library_uc)
-  string(REPLACE " " "\\ " BOOST_${library_uc}_LIBRARY ${BOOST_${library_uc}_LIBRARY})
+  string(REGEX REPLACE "([ ()])" "\\\\\\1" BOOST_${library_uc}_LIBRARY ${BOOST_${library_uc}_LIBRARY})
   set(boost_library_info
     "${boost_library_info}set(HPX_BOOST_${library_uc}_LIBRARY ${BOOST_${library_uc}_LIBRARY}\n")
   set(boost_library_info
