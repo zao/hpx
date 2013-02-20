@@ -57,9 +57,6 @@ namespace hpx { namespace parcelset { namespace websocket
                 arg_size += traits::get_type_size(p);
             }
 
-            // generate the name for this data_buffer
-            std::string data_buffer_name(pv[0].get_parcel_id().to_string());
-
             // clear out_buffer_
             out_buffer_.clear();
 
@@ -68,8 +65,14 @@ namespace hpx { namespace parcelset { namespace websocket
 
             {
                 // Serialize the data
+                util::binary_filter* filter = pv[0].get_serialization_filter();
+                int archive_flags = boost::archive::no_header;
+                if (filter) {
+                    filter->set_max_compression_length(out_buffer_.capacity());
+                    archive_flags |= util::enable_compression;
+                }
                 util::portable_binary_oarchive archive(
-                    out_buffer_, boost::archive::no_header);
+                    out_buffer_, filter, archive_flags);
 
                 std::size_t count = pv.size();
                 archive << count;
@@ -87,7 +90,7 @@ namespace hpx { namespace parcelset { namespace websocket
             // We have to repackage all exceptions thrown by the
             // serialization library as otherwise we will loose the
             // e.what() description of the problem.
-            HPX_RETHROW_EXCEPTION(serialization_error,
+            HPX_THROW_EXCEPTION(serialization_error,
                 "websocket::parcelport_connection::set_parcel",
                 boost::str(boost::format(
                     "parcelport: parcel serialization failed, caught "
@@ -95,7 +98,7 @@ namespace hpx { namespace parcelset { namespace websocket
             return;
         }
         catch (boost::system::system_error const& e) {
-            HPX_RETHROW_EXCEPTION(serialization_error,
+            HPX_THROW_EXCEPTION(serialization_error,
                 "websocket::parcelport_connection::set_parcel",
                 boost::str(boost::format(
                     "parcelport: parcel serialization failed, caught "
@@ -104,7 +107,7 @@ namespace hpx { namespace parcelset { namespace websocket
             return;
         }
         catch (std::exception const& e) {
-            HPX_RETHROW_EXCEPTION(serialization_error,
+            HPX_THROW_EXCEPTION(serialization_error,
                 "websocket::parcelport_connection::set_parcel",
                 boost::str(boost::format(
                     "parcelport: parcel serialization failed, caught "
