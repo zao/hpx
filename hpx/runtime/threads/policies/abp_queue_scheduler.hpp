@@ -71,7 +71,8 @@ struct abp_queue_scheduler : boost::noncopyable
       : queues_(init.num_queues_),
         curr_queue_(0),
         numa_sensitive_(init.numa_sensitive_),
-        topology_(get_topology())
+        topology_(get_topology()),
+        stolen_threads_(0)
     {
         BOOST_ASSERT(init.num_queues_ != 0);
         for (std::size_t i = 0; i < init.num_queues_; ++i)
@@ -94,6 +95,11 @@ struct abp_queue_scheduler : boost::noncopyable
     std::size_t get_pu_num(std::size_t num_thread) const
     {
         return num_thread;
+    }
+
+    std::size_t get_num_stolen_threads() const
+    {
+        return stolen_threads_;
     }
 
     ///////////////////////////////////////////////////////////////////////
@@ -132,6 +138,45 @@ struct abp_queue_scheduler : boost::noncopyable
             result += queues_[i]->get_thread_count(state);
         return result;
     }
+
+#if HPX_THREAD_MAINTAIN_QUEUE_WAITTIME
+    ///////////////////////////////////////////////////////////////////////////
+    boost::int64_t get_average_thread_wait_time(
+        std::size_t num_thread = std::size_t(-1)) const
+    {
+        //  Return average thread wait time of one specific queue.
+        if (std::size_t(-1) != num_thread)
+        {
+            BOOST_ASSERT(num_thread < queues_.size());
+            return queues_[num_thread]->get_average_thread_wait_time();
+        }
+
+        // Return the cumulative average thread wait time for all queues.
+        boost::int64_t wait_time = 0;
+        for (std::size_t i = 0; i < queues_.size(); ++i)
+            wait_time += queues_[i]->get_average_thread_wait_time();
+
+        return wait_time / queues_.size();
+    }
+
+    boost::int64_t get_average_task_wait_time(
+        std::size_t num_thread = std::size_t(-1)) const
+    {
+        //  Return average task wait time of one specific queue.
+        if (std::size_t(-1) != num_thread)
+        {
+            BOOST_ASSERT(num_thread < queues_.size());
+            return queues_[num_thread]->get_average_task_wait_time();
+        }
+
+        // Return the cumulative average task wait time for all queues.
+        boost::int64_t wait_time = 0;
+        for (std::size_t i = 0; i < queues_.size(); ++i)
+            wait_time += queues_[i]->get_average_task_wait_time();
+
+        return wait_time / queues_.size();
+    }
+#endif
 
     ///////////////////////////////////////////////////////////////////////////
     void abort_all_suspended_threads()
@@ -186,7 +231,10 @@ struct abp_queue_scheduler : boost::noncopyable
         for (std::size_t i = 1; i < queue_size; ++i) {
             std::size_t idx = (i + num_thread) % queue_size;
             if (queues_[idx]->steal_next_thread(thrd))
+            {
+                ++stolen_threads_;
                 return true;
+            }
         }
         return false;
     }
@@ -254,7 +302,11 @@ struct abp_queue_scheduler : boost::noncopyable
 
                 result = queues_[num_thread]->steal_new_or_terminate(
                     i, running, added, queues_[i]) && result;
-                if (0 != added) return result;
+                if (0 != added)
+                {
+                    stolen_threads_ += added;
+                    return result;
+                }
             }
         }
 
@@ -263,7 +315,11 @@ struct abp_queue_scheduler : boost::noncopyable
             std::size_t idx = (i + num_thread) % queue_size;
             result = queues_[num_thread]->steal_new_or_terminate(
                 idx, running, added, queues_[idx]) && result;
-            if (0 != added) return result;
+            if (0 != added)
+            {
+                stolen_threads_ += added;
+                return result;
+            }
         }
 
 #if HPX_THREAD_MINIMAL_DEADLOCK_DETECTION
@@ -315,6 +371,7 @@ private:
     boost::atomic<std::size_t> curr_queue_;
     bool numa_sensitive_;
     topology const& topology_;
+    boost::atomic<std::size_t> stolen_threads_;
 };
 
 }}}

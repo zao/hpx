@@ -385,6 +385,8 @@ namespace hpx { namespace util
                 ("hpx:nodes", value<std::vector<std::string> >()->multitoken(),
                   "the (space separated) list of the nodes to use (usually "
                   "this is extracted from a node file)")
+                ("hpx:endnodes", "this can be used to end the list of nodes "
+                  "specified using the option --hpx:nodes")
                 ("hpx:ifsuffix", value<std::string>(),
                   "suffix to append to host names in order to resolve them "
                   "to the proper network interconnect")
@@ -415,6 +417,14 @@ namespace hpx { namespace util
                   "the affinity domain the OS threads will be confined to, "
                   "possible values: pu, core, numa, machine (default: pu), valid for "
                   "--hpx:queuing=local and priority_local only")
+                ("hpx:bind", value<std::vector<std::string> >()->composing(),
+                  "the detailed affinity description for the OS threads, see "
+                  "the documentation for a detailed description of possible "
+                  "values. Do not use with --hpx:pu-step, --hpx:pu-offset, or "
+                  "--hpx:affinity options. Implies --hpx:numa-sensitive.")
+                ("hpx:print-bind", 
+                  "print to the console the bit masks calculated from the "
+                  "arguments specified to all --hpx:bind options.")
 #endif
                 ("hpx:threads", value<std::string>(),
                  "the number of operating system threads to spawn for this HPX "

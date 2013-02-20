@@ -56,7 +56,7 @@ if(UNIX)
   endif()
 endif()
 
-foreach(lib ${hpx_LIBRARIES})
+foreach(lib "hpx hpx_serialization")
   set(${lib}_SOURCES "" CACHE INTERNAL "Sources for lib${lib}." FORCE)
 
   if(MSVC)
@@ -119,7 +119,7 @@ if(MSVC)
       DEPENDS ${switch_to_fiber_source})
     set(hpx_external_OBJECTS ${CMAKE_CURRENT_BINARY_DIR}/switch_to_fiber.obj
       CACHE INTERNAL "External object files for HPX." FORCE)
-    add_definitions(-DHPX_EMULATE_SWAP_CONTEXT)
+    hpx_add_definitions(-DHPX_EMULATE_SWAP_CONTEXT)
   endif()
 endif()
 
@@ -346,6 +346,7 @@ hpx_get_target_file(name hpx)
 set_property(TARGET hpx APPEND
   PROPERTY COMPILE_DEFINITIONS
   "HPX_DLL_STRING=\"${name}\""
+  "HPX_COMPONENT_NAME=hpx"
   "HPX_EXPORTS"
   "HPX_PREFIX=\"${HPX_PREFIX}\""
   "HPX_GIT_COMMIT=\"${HPX_GIT_COMMIT}\""

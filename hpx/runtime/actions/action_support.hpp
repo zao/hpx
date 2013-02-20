@@ -15,6 +15,7 @@
 #include <hpx/util/move.hpp>
 #include <hpx/traits/action_priority.hpp>
 #include <hpx/traits/action_stacksize.hpp>
+#include <hpx/traits/action_serialization_filter.hpp>
 #include <hpx/traits/type_size.hpp>
 
 #include <boost/version.hpp>
@@ -185,6 +186,10 @@ namespace hpx { namespace actions
         get_thread_init_data(continuation_type& cont,
             naming::address::address_type lva,
             threads::thread_init_data& data) = 0;
+
+        /// Return a pointer to the filter to be used while serializing an 
+        /// instance of this action type.
+        virtual util::binary_filter* get_serialization_filter() const = 0;
     };
 
     ///////////////////////////////////////////////////////////////////////////
@@ -511,6 +516,13 @@ namespace hpx { namespace actions
             return data;
         }
 
+        /// Return a pointer to the filter to be used while serializing an 
+        /// instance of this action type.
+        util::binary_filter* get_serialization_filter() const
+        {
+            return traits::action_serialization_filter<derived_type>::call();
+        }
+
     public:
         /// retrieve the N's argument
         template <int N>
@@ -670,6 +682,13 @@ namespace hpx { namespace actions
         {
             return boost::move(Component::wrap_action(boost::move(f), lva));
         }
+
+    private:
+        // serialization support
+        friend class boost::serialization::access;
+
+        template <class Archive>
+        BOOST_FORCEINLINE void serialize(Archive& ar, const unsigned int) {}
     };
 
     ///////////////////////////////////////////////////////////////////////////

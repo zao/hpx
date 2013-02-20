@@ -1,5 +1,5 @@
-// Copyright (c) 2007-2012 Hartmut Kaiser
-// Copyright (c)      2012 Thomas Heller
+// Copyright (c) 2007-2013 Hartmut Kaiser
+// Copyright (c) 2012-2013 Thomas Heller
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -51,9 +51,9 @@ namespace hpx
         typedef boost::fusion::tuple<
             lcos::future<T> , lcos::future<T>
         > argument_type;
-        lcos::local::futures_factory<return_type()> p(
+        lcos::local::futures_factory<return_type()> p((
             detail::when_any_tuple<argument_type, T>(
-                argument_type(f0 , f1)));
+                argument_type(f0 , f1))));
         p.apply();
         return p.get_future();
     }
@@ -83,9 +83,9 @@ namespace hpx
         typedef boost::fusion::tuple<
             lcos::future<T> , lcos::future<T> , lcos::future<T>
         > argument_type;
-        lcos::local::futures_factory<return_type()> p(
+        lcos::local::futures_factory<return_type()> p((
             detail::when_any_tuple<argument_type, T>(
-                argument_type(f0 , f1 , f2)));
+                argument_type(f0 , f1 , f2))));
         p.apply();
         return p.get_future();
     }
@@ -115,9 +115,9 @@ namespace hpx
         typedef boost::fusion::tuple<
             lcos::future<T> , lcos::future<T> , lcos::future<T> , lcos::future<T>
         > argument_type;
-        lcos::local::futures_factory<return_type()> p(
+        lcos::local::futures_factory<return_type()> p((
             detail::when_any_tuple<argument_type, T>(
-                argument_type(f0 , f1 , f2 , f3)));
+                argument_type(f0 , f1 , f2 , f3))));
         p.apply();
         return p.get_future();
     }
@@ -147,9 +147,9 @@ namespace hpx
         typedef boost::fusion::tuple<
             lcos::future<T> , lcos::future<T> , lcos::future<T> , lcos::future<T> , lcos::future<T>
         > argument_type;
-        lcos::local::futures_factory<return_type()> p(
+        lcos::local::futures_factory<return_type()> p((
             detail::when_any_tuple<argument_type, T>(
-                argument_type(f0 , f1 , f2 , f3 , f4)));
+                argument_type(f0 , f1 , f2 , f3 , f4))));
         p.apply();
         return p.get_future();
     }

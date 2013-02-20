@@ -28,7 +28,7 @@ using boost::posix_time::milliseconds;
 using hpx::naming::id_type;
 using hpx::naming::gid_type;
 using hpx::naming::get_management_type_name;
-using hpx::naming::strip_credit_from_gid;
+using hpx::naming::detail::get_stripped_gid;
 
 using hpx::components::component_type;
 using hpx::components::get_component_type;
@@ -86,7 +86,7 @@ void hpx_test_main(
         // Associate a symbolic name with the object. The symbol namespace
         // should not reference-count the name, as the GID we're passing has
         // no credits.
-        gid_type raw_gid = strip_credit_from_gid(monitor.get_raw_gid());
+        gid_type raw_gid = get_stripped_gid(monitor.get_raw_gid());
         HPX_TEST_EQ(true, register_name(name, raw_gid));
 
         {
@@ -96,15 +96,16 @@ void hpx_test_main(
             // The component should still be alive.
             HPX_TEST_EQ(false, monitor.ready(milliseconds(delay)));
 
-            // let id go out of scope
+            // let id go out of scope. id was the last reference to the
+            // component
         }
 
         // Flush pending reference counting operations.
         garbage_collect();
 
-        // The component should still be alive, as the symbolic binding holds
-        // a reference to it.
-        HPX_TEST_EQ(false, monitor.ready(milliseconds(delay)));
+        // The component should not be alive anymore, as the symbolic binding
+        // does not hold a reference to it.
+        HPX_TEST_EQ(true, monitor.ready(milliseconds(delay)));
 
         // Remove the symbolic name.
         HPX_TEST_EQ(raw_gid, unregister_name(name).get_gid());

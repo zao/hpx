@@ -19,6 +19,7 @@
 #include <hpx/util/logging.hpp>
 #include <hpx/util/block_profiler.hpp>
 #include <hpx/util/itt_notify.hpp>
+#include <hpx/util/apex.hpp>
 #include <hpx/util/stringstream.hpp>
 #include <hpx/util/hardware/timestamp.hpp>
 
@@ -30,6 +31,18 @@
 #include <boost/format.hpp>
 
 #include <numeric>
+
+#if HPX_THREAD_MAINTAIN_QUEUE_WAITTIME
+///////////////////////////////////////////////////////////////////////////////
+namespace hpx { namespace threads { namespace policies
+{
+    ///////////////////////////////////////////////////////////////////////////
+    // We control whether to collect queue wait times using this global bool.
+    // It will be set by any of the related performance counters. Once set it 
+    // stays set, thus no race conditions will occur.
+    bool maintain_queue_wait_times = false;
+}}}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace hpx { namespace threads
@@ -44,13 +57,14 @@ namespace hpx { namespace threads
             "pending",
             "suspended",
             "depleted",
-            "terminated"
+            "terminated",
+            "staged"
         };
     }
 
     char const* get_thread_state_name(thread_state_enum state)
     {
-        if (state < unknown || state > terminated)
+        if (state < unknown || state > staged)
             return "unknown";
         return strings::thread_state_names[state];
     }
@@ -1175,6 +1189,108 @@ namespace hpx { namespace threads
         return naming::invalid_gid;
     }
 
+#if HPX_THREAD_MAINTAIN_QUEUE_WAITTIME
+    // average pending thread wait time
+    template <typename SchedulingPolicy, typename NotificationPolicy>
+    naming::gid_type threadmanager_impl<SchedulingPolicy, NotificationPolicy>::
+        thread_wait_time_counter_creator(
+            performance_counters::counter_info const& info, error_code& ec)
+    {
+        // verify the validity of the counter instance name
+        performance_counters::counter_path_elements paths;
+        performance_counters::get_counter_path_elements(info.fullname_, paths, ec);
+        if (ec) return naming::invalid_gid;
+
+        // /threads{locality#%d/total}/wait-time/pending
+        // /threads{locality#%d/worker-thread%d}/wait-time/pending
+        if (paths.parentinstance_is_basename_) {
+            HPX_THROWS_IF(ec, bad_parameter, 
+                "thread_wait_time_counter_creator",
+                "invalid counter instance parent name: " +
+                    paths.parentinstancename_);
+            return naming::invalid_gid;
+        }
+
+        typedef scheduling_policy_type spt;
+
+        if (paths.instancename_ == "total" && paths.instanceindex_ == -1)
+        {
+            policies::maintain_queue_wait_times = true;
+
+            // overall counter
+            using performance_counters::detail::create_raw_counter;
+            return create_raw_counter(info,
+                HPX_STD_BIND(&spt::get_average_thread_wait_time, &scheduler_, -1), ec);
+        }
+        else if (paths.instancename_ == "worker-thread" &&
+            paths.instanceindex_ >= 0 &&
+            std::size_t(paths.instanceindex_) < threads_.size())
+        {
+            policies::maintain_queue_wait_times = true;
+
+            // specific counter
+            using performance_counters::detail::create_raw_counter;
+            return create_raw_counter(info,
+                HPX_STD_BIND(&spt::get_average_thread_wait_time, &scheduler_,
+                    static_cast<std::size_t>(paths.instanceindex_)), ec);
+        }
+
+        HPX_THROWS_IF(ec, bad_parameter, "thread_wait_time_counter_creator",
+            "invalid counter instance name: " + paths.instancename_);
+        return naming::invalid_gid;
+    }
+
+    // average pending task wait time
+    template <typename SchedulingPolicy, typename NotificationPolicy>
+    naming::gid_type threadmanager_impl<SchedulingPolicy, NotificationPolicy>::
+        task_wait_time_counter_creator(
+            performance_counters::counter_info const& info, error_code& ec)
+    {
+        // verify the validity of the counter instance name
+        performance_counters::counter_path_elements paths;
+        performance_counters::get_counter_path_elements(info.fullname_, paths, ec);
+        if (ec) return naming::invalid_gid;
+
+        // /threads{locality#%d/total}/wait-time/pending
+        // /threads{locality#%d/worker-thread%d}/wait-time/pending
+        if (paths.parentinstance_is_basename_) {
+            HPX_THROWS_IF(ec, bad_parameter, 
+                "task_wait_time_counter_creator",
+                "invalid counter instance parent name: " +
+                    paths.parentinstancename_);
+            return naming::invalid_gid;
+        }
+
+        typedef scheduling_policy_type spt;
+
+        if (paths.instancename_ == "total" && paths.instanceindex_ == -1)
+        {
+            policies::maintain_queue_wait_times = true;
+
+            // overall counter
+            using performance_counters::detail::create_raw_counter;
+            return create_raw_counter(info,
+                HPX_STD_BIND(&spt::get_average_task_wait_time, &scheduler_, -1), ec);
+        }
+        else if (paths.instancename_ == "worker-thread" &&
+            paths.instanceindex_ >= 0 &&
+            std::size_t(paths.instanceindex_) < threads_.size())
+        {
+            policies::maintain_queue_wait_times = true;
+
+            // specific counter
+            using performance_counters::detail::create_raw_counter;
+            return create_raw_counter(info,
+                HPX_STD_BIND(&spt::get_average_task_wait_time, &scheduler_,
+                    static_cast<std::size_t>(paths.instanceindex_)), ec);
+        }
+
+        HPX_THROWS_IF(ec, bad_parameter, "task_wait_time_counter_creator",
+            "invalid counter instance name: " + paths.instancename_);
+        return naming::invalid_gid;
+    }
+#endif
+
     bool locality_allocator_counter_discoverer(
         performance_counters::counter_info const& info,
         HPX_STD_FUNCTION<performance_counters::discover_counter_func> const& f,
@@ -1388,6 +1504,14 @@ namespace hpx { namespace threads
                   static_cast<std::size_t>(paths.instanceindex_)),
               "worker-thread", shepherd_count
             },
+            // /threads(locality#%d/total}/count/instantaneous/staged
+            // /threads(locality#%d/worker-thread%d}/count/instantaneous/staged
+            { "count/instantaneous/staged",
+              HPX_STD_BIND(&spt::get_thread_count, &scheduler_, staged, -1),
+              HPX_STD_BIND(&spt::get_thread_count, &scheduler_, staged,
+                  static_cast<std::size_t>(paths.instanceindex_)),
+              "worker-thread", shepherd_count
+            },
             // /threads(locality#%d/total}/count/stack-recycles
             { "count/stack-recycles",
               &coroutine_type::impl_type::get_stack_recycle_count,
@@ -1407,6 +1531,12 @@ namespace hpx { namespace threads
               HPX_STD_BIND(&coroutine_type::impl_type::get_allocation_count,
                   static_cast<std::size_t>(paths.instanceindex_)),
               "allocator", HPX_COROUTINE_NUM_ALL_HEAPS
+            },
+            // /threads(locality#%d/total}/count/stolen
+            { "count/stolen",
+              &coroutine_type::impl_type::get_allocation_count_all,
+              HPX_STD_BIND(&spt::get_num_stolen_threads, &scheduler_),
+              "worker-thread", HPX_COROUTINE_NUM_ALL_HEAPS
             },
         };
         std::size_t const data_size = sizeof(data)/sizeof(data[0]);
@@ -1445,6 +1575,25 @@ namespace hpx { namespace threads
               &performance_counters::locality_thread_counter_discoverer,
               ""
             },
+#if HPX_THREAD_MAINTAIN_QUEUE_WAITTIME
+            // average thread wait time for queue(s)
+            { "/threads/wait-time/pending", performance_counters::counter_raw,
+              "returns the average wait time of pending threads for the referenced queue",
+              HPX_PERFORMANCE_COUNTER_V1,
+              boost::bind(&ti::thread_wait_time_counter_creator, this, _1, _2),
+              &performance_counters::locality_thread_counter_discoverer,
+              "ns"
+            },
+            // average task wait time for queue(s)
+            { "/threads/wait-time/staged", performance_counters::counter_raw,
+              "returns the average wait time of staged threads (task descriptions) "
+              "for the referenced queue",
+              HPX_PERFORMANCE_COUNTER_V1,
+              boost::bind(&ti::task_wait_time_counter_creator, this, _1, _2),
+              &performance_counters::locality_thread_counter_discoverer,
+              "ns"
+            },
+#endif
             // idle rate
             { "/threads/idle-rate", performance_counters::counter_raw,
               "returns the idle rate for the referenced object [0.1%]",
@@ -1490,6 +1639,13 @@ namespace hpx { namespace threads
               &performance_counters::locality_thread_counter_discoverer,
               ""
             },
+            { "/threads/count/instantaneous/staged", performance_counters::counter_raw,
+              "returns the current number of staged HPX-threads (task descriptions) "
+              "at the referenced locality",
+              HPX_PERFORMANCE_COUNTER_V1, counts_creator,
+              &performance_counters::locality_thread_counter_discoverer,
+              ""
+            },
             { "/threads/count/stack-recycles", performance_counters::counter_raw,
               "returns the total number of HPX-thread recycling operations performed "
               "for the referenced locality", HPX_PERFORMANCE_COUNTER_V1,
@@ -1505,12 +1661,19 @@ namespace hpx { namespace threads
             },
 #endif
             { "/threads/count/objects", performance_counters::counter_raw,
-              "returns the overall number of created HPX-threads objects for "
+              "returns the overall number of created HPX-threads for "
               "the referenced locality", HPX_PERFORMANCE_COUNTER_V1,
               counts_creator,
               &locality_allocator_counter_discoverer,
               ""
-            }
+            },
+            { "/threads/count/stolen", performance_counters::counter_raw,
+              "returns the overall number of HPX-threads stolen from neighboring"
+              "schedulers for the referenced locality", HPX_PERFORMANCE_COUNTER_V1,
+              counts_creator,
+              &performance_counters::locality_counter_discoverer,
+              ""
+            },
         };
         performance_counters::install_counter_types(
             counter_types, sizeof(counter_types)/sizeof(counter_types[0]));
@@ -1559,6 +1722,7 @@ namespace hpx { namespace threads
         start_periodic_maintenance<SchedulingPolicy>(
             typename SchedulingPolicy::has_periodic_maintenance());
 
+        util::apex_wrapper apex("hpx-thread-scheduler-loop");
         while (true) {
             // Get the next PX thread from the queue
             thread_data* thrd = NULL;
@@ -1593,6 +1757,10 @@ namespace hpx { namespace threads
                                 util::itt::undo_frame_context undoframe(fctx);
                                 util::itt::task task(domain, thrd->get_description());
 #endif
+#if defined(HPX_HAVE_APEX)
+                                util::apex_wrapper apex("hpx-user-level-thread");
+#endif
+
                                 // Record time elapsed in thread changing state
                                 // and add to aggregate execution time.
                                 boost::uint64_t timestamp = util::hardware::timestamp();
@@ -1704,6 +1872,7 @@ namespace hpx { namespace threads
     bool threadmanager_impl<SchedulingPolicy, NotificationPolicy>::
         run(std::size_t num_threads)
     {
+        LTM_(info) << "run: " << threads::hardware_concurrency() << " number of cores available";
         LTM_(info) << "run: creating " << num_threads << " OS thread(s)";
 
         if (0 == num_threads) {

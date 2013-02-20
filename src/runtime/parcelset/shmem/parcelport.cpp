@@ -1,4 +1,4 @@
-//  Copyright (c) 2007-2012 Hartmut Kaiser
+//  Copyright (c) 2007-2013 Hartmut Kaiser
 //
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -59,7 +59,7 @@ namespace hpx { namespace parcelset { namespace shmem
             on_start_thread, on_stop_thread, "parcel_pool_shmem", "-shmem"),
         acceptor_(NULL), connection_count_(0),
         connection_cache_(ini.get_max_connections(), ini.get_max_connections_per_loc()),
-        data_buffer_cache_(ini.get_max_connections() * 4)
+        data_buffer_cache_(ini.get_shmem_data_buffer_cache_size())
     {
     }
 
@@ -250,25 +250,36 @@ namespace hpx { namespace parcelset { namespace shmem
 
         if (!client_connection)
         {
-            // If there was an error, we might be safe if there are no parcels
-            // to be sent anymore (some other thread already picked them up)
-            // or if there are parcels, but the parcel we were about to sent
-            // has been already processed.
-            util::spinlock::scoped_lock l(mtx_);
-
-            iterator it = pending_parcels_.find(locality_id);
-            if (it != pending_parcels_.end())
+            if (ec)
             {
-                map_second_type const& data = it->second;
-                BOOST_FOREACH(parcel const& pp, data.first)
+                // If there was an error, we might be safe if there are no parcels
+                // to be sent anymore (some other thread already picked them up)
+                // or if there are parcels, but the parcel we were about to sent
+                // has been already processed.
+                util::spinlock::scoped_lock l(mtx_);
+
+                iterator it = pending_parcels_.find(locality_id);
+                if (it != pending_parcels_.end())
                 {
-                    if (pp.get_parcel_id() == parcel_id)
+                    map_second_type& data = it->second;
+
+                    std::vector<parcel>::iterator end = data.first.end();
+                    std::vector<write_handler_type>::iterator fit = data.second.begin();
+                    for (std::vector<parcel>::iterator pit = data.first.begin();
+                         pit != end; ++pit, ++fit)
                     {
-                        // our parcel is still here, bailing out
-                        throw hpx::detail::access_exception(ec);
+                        if ((*pit).get_parcel_id() == parcel_id)
+                        {
+                            // our parcel is still here, bailing out
+                            throw hpx::detail::access_exception(ec);
+                        }
                     }
                 }
             }
+
+            // We can safely return if no connection is available at this point.
+            // As soon as a connection becomes available it checks for pending
+            // parcels and sends those out.
             return;
         }
 
@@ -379,9 +390,8 @@ namespace hpx { namespace parcelset { namespace shmem
         // unlikely), bail.
         if (!got_cache_space)
         {
-            HPX_THROWS_IF(ec, network_error,
-                "shmem::parcelport::get_connection",
-                "timed out while trying to find room in the connection cache");
+            if (&ec != &throws)
+                ec = make_success_code();
             return client_connection;
         }
 
@@ -444,7 +454,37 @@ namespace hpx { namespace parcelset { namespace shmem
             }
         }
 
+        if (&ec != &throws)
+            ec = make_success_code();
+
         return client_connection;
+    }
+
+    /// Return the given connection cache statistic
+    boost::int64_t parcelport::get_connection_cache_statistics(
+        connection_cache_statistics_type t) const
+    {
+        switch (t) {
+        case connection_cache_insertions:
+            return connection_cache_.get_cache_insertions();
+
+        case connection_cache_evictions:
+            return connection_cache_.get_cache_evictions();
+
+        case connection_cache_hits:
+            return connection_cache_.get_cache_hits();
+
+        case connection_cache_misses:
+            return connection_cache_.get_cache_misses();
+
+        default:
+            break;
+        }
+
+        HPX_THROW_EXCEPTION(bad_parameter,
+            "tcp::parcelport::get_connection_cache_statistics",
+            "invalid connection cache statistics type");
+        return 0;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -461,8 +501,10 @@ namespace hpx { namespace parcelset { namespace shmem
 
                 {
                     // De-serialize the parcel data
+                    data_buffer::data_buffer_type const& buffer = 
+                        parcel_data.get_buffer();
                     util::portable_binary_iarchive archive(
-                        parcel_data.get_buffer(), boost::archive::no_header);
+                        buffer, buffer.size(), boost::archive::no_header);
 
                     std::size_t parcel_count = 0;
                     std::size_t arg_size = 0;

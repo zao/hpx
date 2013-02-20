@@ -16,6 +16,8 @@
 #include <boost/ref.hpp>
 #include <boost/cstdint.hpp>
 
+#include "worker.hpp"
+
 using boost::program_options::variables_map;
 using boost::program_options::options_description;
 using boost::program_options::value;
@@ -67,7 +69,7 @@ void print_results(
         = boost::str(boost::format("%lu,") % total_delay);
 
     cout <<
-        ( boost::format("%-21s %-21s %-21s %-21s %-21s %-21s %10.12s\n")
+        ( boost::format("%-21s %-21s %-21s %-21s %-21s %-21s %10.12s, %10.12s\n")
         % cores_str % seed_str % tasks_str
         % min_delay_str % max_delay_str % total_delay_str
         % walltime % (walltime / tasks)) << flush;
@@ -87,16 +89,6 @@ boost::uint64_t shuffler(
         dist(0, high - 1);
 
     return dist(prng);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-void worker(
-    boost::uint64_t delay_
-    )
-{
-    double volatile d = 0.;
-    for (boost::uint64_t i = 0; i < delay_; ++i)
-        d += 1. / (2. * i + 1.);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -211,7 +203,7 @@ int hpx_main(
         ///////////////////////////////////////////////////////////////////////
         // Queue the tasks in a serial loop.
         for (boost::uint64_t i = 0; i < tasks; ++i)
-            register_work(HPX_STD_BIND(&worker, payloads[i]));
+            register_work(HPX_STD_BIND(&invoke_worker, payloads[i]));
 
         ///////////////////////////////////////////////////////////////////////
         // Wait for the work to finish.

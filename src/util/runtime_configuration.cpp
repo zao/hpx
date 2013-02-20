@@ -104,6 +104,7 @@ namespace hpx { namespace util
 #else
             "endian_out=${HPX_ENDIAN_OUT:little}",
 #endif
+            "shmem_data_buffer_cache_size=${HPX_PARCEL_SHMEM_DATA_BUFFER_CACHE_SIZE:512}",
 
 #if defined(HPX_USE_PARCELPORT_SHMEM)
             "use_parcelport_shmem=${HPX_USE_PARCELPORT_SHMEM:0}",
@@ -379,11 +380,11 @@ namespace hpx { namespace util
             util::section const * sec = get_section("hpx.parcel");
             if(NULL != sec)
             {
-                std::string cfg_max_connections(
+                std::string cfg_max_connections_per_loc(
                     sec->get_entry("max_connections_per_locality",
                         HPX_MAX_PARCEL_CONNECTIONS_PER_LOCALITY));
 
-                return boost::lexical_cast<std::size_t>(cfg_max_connections);
+                return boost::lexical_cast<std::size_t>(cfg_max_connections_per_loc);
             }
         }
         return HPX_MAX_PARCEL_CONNECTIONS_PER_LOCALITY;
@@ -404,6 +405,23 @@ namespace hpx { namespace util
             }
         }
         return HPX_MAX_PARCEL_CONNECTIONS;
+    }
+
+    std::size_t runtime_configuration::get_shmem_data_buffer_cache_size() const
+    {
+        if (has_section("hpx.parcel"))
+        {
+            util::section const * sec = get_section("hpx.parcel");
+            if(NULL != sec)
+            {
+                std::string cfg_shmem_data_buffer_cache_size(
+                    sec->get_entry("shmem_data_buffer_cache_size",
+                        HPX_PARCEL_SHMEM_DATA_BUFFER_CACHE_SIZE));
+
+                return boost::lexical_cast<std::size_t>(cfg_shmem_data_buffer_cache_size);
+            }
+        }
+        return HPX_PARCEL_SHMEM_DATA_BUFFER_CACHE_SIZE;
     }
 
     agas::service_mode runtime_configuration::get_agas_service_mode() const

@@ -124,7 +124,7 @@ namespace hpx { namespace lcos { namespace detail
         naming::id_type get_gid() const
         {
             return naming::id_type(
-                naming::strip_credit_from_gid(get_base_gid())
+                naming::detail::get_stripped_gid(get_base_gid())
               , naming::id_type::unmanaged);
         }
 
@@ -223,7 +223,7 @@ namespace hpx { namespace lcos { namespace detail
         naming::id_type get_gid() const
         {
             return naming::id_type(
-                naming::strip_credit_from_gid(get_base_gid())
+                naming::detail::get_stripped_gid(get_base_gid())
               , naming::id_type::unmanaged);
         }
 
@@ -268,7 +268,7 @@ namespace hpx { namespace lcos
     ///
     ///     // initiate the action supplying the promise as a
     ///     // continuation
-    ///     appy<some_action>(new continuation(f.get_gid()), ...);
+    ///     apply<some_action>(new continuation(f.get_gid()), ...);
     ///
     ///     // Wait for the result to be returned, yielding control
     ///     // in the meantime.
