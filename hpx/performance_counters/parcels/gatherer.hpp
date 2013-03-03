@@ -14,6 +14,7 @@
 
 #include <hpx/performance_counters/parcels/data_point.hpp>
 #include <hpx/util/spinlock.hpp>
+#include <hpx/util/get_and_reset_value.hpp>
 
 namespace hpx { namespace performance_counters { namespace parcels
 {
@@ -29,25 +30,25 @@ namespace hpx { namespace performance_counters { namespace parcels
             serialization_time_(0),
             num_parcels_(0),
             num_messages_(0),
-            overall_type_bytes_(0)
+            overall_raw_bytes_(0)
         {}
 
         void add_data(data_point const& x);
 
-        std::size_t num_parcels() const;
-        std::size_t num_messages() const;
-        std::size_t total_bytes() const;
-        std::size_t total_type_bytes() const;
-        boost::int64_t total_time() const;
-        boost::int64_t total_serialization_time() const;
+        boost::int64_t num_parcels(bool reset);
+        boost::int64_t num_messages(bool reset);
+        boost::int64_t total_bytes(bool reset);
+        boost::int64_t total_raw_bytes(bool reset);
+        boost::int64_t total_time(bool reset);
+        boost::int64_t total_serialization_time(bool reset);
 
     private:
-        std::size_t overall_bytes_;
+        boost::int64_t overall_bytes_;
         boost::int64_t overall_time_;
         boost::int64_t serialization_time_;
-        std::size_t num_parcels_;
-        std::size_t num_messages_;
-        std::size_t overall_type_bytes_;
+        boost::int64_t num_parcels_;
+        boost::int64_t num_messages_;
+        boost::int64_t overall_raw_bytes_;
 
         // Create mutex for accumulator functions.
         mutable mutex_type acc_mtx;
@@ -61,44 +62,44 @@ namespace hpx { namespace performance_counters { namespace parcels
         overall_time_ += x.time_;
         serialization_time_ += x.serialization_time_;
         num_parcels_ += x.num_parcels_;
-        overall_type_bytes_ += x.type_bytes_;
+        overall_raw_bytes_ += x.raw_bytes_;
         ++num_messages_;
     }
 
-    inline std::size_t gatherer::num_parcels() const
+    inline boost::int64_t gatherer::num_parcels(bool reset)
     {
         mutex_type::scoped_lock mtx(acc_mtx);
-        return num_parcels_;
+        return util::get_and_reset_value(num_parcels_, reset);
     }
 
-    inline std::size_t gatherer::num_messages() const
+    inline boost::int64_t gatherer::num_messages(bool reset)
     {
         mutex_type::scoped_lock mtx(acc_mtx);
-        return num_messages_;
+        return util::get_and_reset_value(num_messages_, reset);
     }
 
-    inline boost::int64_t gatherer::total_time() const
+    inline boost::int64_t gatherer::total_time(bool reset)
     {
         mutex_type::scoped_lock mtx(acc_mtx);
-        return overall_time_;
+        return util::get_and_reset_value(overall_time_, reset);
     }
 
-    inline boost::int64_t gatherer::total_serialization_time() const
+    inline boost::int64_t gatherer::total_serialization_time(bool reset)
     {
         mutex_type::scoped_lock mtx(acc_mtx);
-        return serialization_time_;
+        return util::get_and_reset_value(serialization_time_, reset);
     }
 
-    inline std::size_t gatherer::total_bytes() const
+    inline boost::int64_t gatherer::total_bytes(bool reset)
     {
         mutex_type::scoped_lock mtx(acc_mtx);
-        return overall_bytes_;
+        return util::get_and_reset_value(overall_bytes_, reset);
     }
 
-    inline std::size_t gatherer::total_type_bytes() const
+    inline boost::int64_t gatherer::total_raw_bytes(bool reset)
     {
         mutex_type::scoped_lock mtx(acc_mtx);
-        return overall_type_bytes_;
+        return util::get_and_reset_value(overall_raw_bytes_, reset);
     }
 }}}
 
