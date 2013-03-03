@@ -40,6 +40,7 @@ namespace hpx { namespace parcelset { namespace websocket
     void parcelport_connection::set_parcel(std::vector<parcel> const& pv)
     {
 #if defined(HPX_DEBUG)
+        // make sure that all parcels go to the same locality
         BOOST_FOREACH(parcel const& p, pv)
         {
             naming::locality const locality_id = p.get_destination_locality();
@@ -81,6 +82,8 @@ namespace hpx { namespace parcelset { namespace websocket
                 {
                     archive << p;
                 }
+
+                arg_size = archive.bytes_written();
             }
 
             // store the time required for serialization
@@ -116,8 +119,8 @@ namespace hpx { namespace parcelset { namespace websocket
         }
 
         send_data_.num_parcels_ = pv.size();
-        send_data_.bytes_ = out_buffer_.size();
-        send_data_.type_bytes_ = arg_size;
+        send_data_.bytes_ = arg_size;
+        send_data_.raw_bytes_ = out_buffer_.size();
     }
 }}}
 

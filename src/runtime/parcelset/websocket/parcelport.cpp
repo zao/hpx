@@ -235,7 +235,7 @@ namespace hpx { namespace parcelset { namespace websocket
         naming::locality locality_id = p.get_destination_locality();
         naming::gid_type parcel_id = p.get_parcel_id();
 
-        // enqueue the incoming parcel ...
+        // enqueue the outgoing parcel ...
         {
             util::spinlock::scoped_lock l(mtx_);
 
@@ -250,25 +250,36 @@ namespace hpx { namespace parcelset { namespace websocket
 
         if (!client_connection)
         {
-            // If there was an error, we might be safe if there are no parcels
-            // to be sent anymore (some other thread already picked them up)
-            // or if there are parcels, but the parcel we were about to sent
-            // has been already processed.
-            util::spinlock::scoped_lock l(mtx_);
-
-            iterator it = pending_parcels_.find(locality_id);
-            if (it != pending_parcels_.end())
+            if (ec)
             {
-                map_second_type const& data = it->second;
-                BOOST_FOREACH(parcel const& pp, data.first)
+                // If there was an error, we might be safe if there are no parcels
+                // to be sent anymore (some other thread already picked them up)
+                // or if there are parcels, but the parcel we were about to sent
+                // has been already processed.
+                util::spinlock::scoped_lock l(mtx_);
+    
+                iterator it = pending_parcels_.find(locality_id);
+                if (it != pending_parcels_.end())
                 {
-                    if (pp.get_parcel_id() == parcel_id)
+                    map_second_type& data = it->second;
+    
+                    std::vector<parcel>::iterator end = data.first.end();
+                    std::vector<write_handler_type>::iterator fit = data.second.begin();
+                    for (std::vector<parcel>::iterator pit = data.first.begin();
+                         pit != end; ++pit, ++fit)
                     {
-                        // our parcel is still here, bailing out
-                        throw hpx::detail::access_exception(ec);
+                        if ((*pit).get_parcel_id() == parcel_id)
+                        {
+                            // our parcel is still here, bailing out
+                            throw hpx::detail::access_exception(ec);
+                        }
                     }
                 }
             }
+
+            // We can safely return if no connection is available at this point.
+            // As soon as a connection becomes available it checks for pending
+            // parcels and sends those out.
             return;
         }
 
@@ -294,7 +305,7 @@ namespace hpx { namespace parcelset { namespace websocket
         }
         else
         {
-            // ... or re-add the connection to the cache
+            // ... or re-add the stuff to the cache
             BOOST_ASSERT(locality_id == client_connection->destination());
 //             connection_cache_.reclaim(locality_id, client_connection);
         }
@@ -319,7 +330,7 @@ namespace hpx { namespace parcelset { namespace websocket
             std::swap(handlers, it->second.second);
         }
 
-        if (!ec && !parcels.empty() && !handlers.empty())
+        if (!parcels.empty() && !handlers.empty())
         {
             // Create a new thread which sends parcels that might still be
             // pending.
@@ -465,7 +476,6 @@ namespace hpx { namespace parcelset { namespace websocket
                         *buffer, boost::archive::no_header);
 
                     std::size_t parcel_count = 0;
-                    std::size_t arg_size = 0;
 
                     archive >> parcel_count;
                     for(std::size_t i = 0; i < parcel_count; ++i)
@@ -477,9 +487,6 @@ namespace hpx { namespace parcelset { namespace websocket
                         // make sure this parcel ended up on the right locality
                         BOOST_ASSERT(p.get_destination_locality() == pp.here());
 
-                        // incoming argument's size
-                        arg_size += traits::get_type_size(p);
-
                         // be sure not to measure add_parcel as serialization time
                         boost::int64_t add_parcel_time = timer.elapsed_nanoseconds();
                         pp.add_received_parcel(p);
@@ -489,7 +496,7 @@ namespace hpx { namespace parcelset { namespace websocket
 
                     // complete received data with parcel count
                     receive_data.num_parcels_ = parcel_count;
-                    receive_data.type_bytes_ = arg_size;
+                    receive_data.raw_bytes_ = archive.bytes_read();
                 }
 
                 // store the time required for serialization
