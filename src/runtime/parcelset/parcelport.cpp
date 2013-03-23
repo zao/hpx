@@ -54,7 +54,7 @@ namespace hpx { namespace parcelset
                 // Create websocket based parcelport only if allowed by the 
                 // configuration info.
                 std::string enable_shmem = 
-                    cfg.get_entry("hpx.parcel.use_parcelport_websocket", "0");
+                    cfg.get_entry("hpx.parcel.websockets.enable", "0");
 
 #endif
             HPX_THROW_EXCEPTION(bad_parameter, "parcelport::create",

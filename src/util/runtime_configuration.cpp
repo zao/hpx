@@ -107,12 +107,13 @@ namespace hpx { namespace util
 #endif
 
 #if defined(HPX_USE_PARCELPORT_SHMEM)
-            // shmem related settings
+            // settings related to shmem
             "[hpx.parcel.shmem]",
             "enable=${HPX_USE_SHMEM_PARCELPORT:0}",
             "data_buffer_cache_size=${HPX_PARCEL_SHMEM_DATA_BUFFER_CACHE_SIZE:512}",
-
-            // websockets related settings
+#endif
+#if defined(HPX_USE_PARCELPORT_WEBSOCKET)
+            // settings related to websockets
             "[hpx.parcel.websockets]",
             "enable=${HPX_USE_PARCELPORT_WEBSOCKET:0}",
 #endif
