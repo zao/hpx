@@ -1,4 +1,5 @@
-//  Copyright (c)      2013 Thomas Heller
+//  Copyright (c) 2013 Thomas Heller
+//  Copyright (c) 2013 Hartmut Kaiser
 //
 //  Distributed under the Boost Software License, Version 1.0. (See accompanying
 //  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -12,11 +13,13 @@
 #include <hpx/lcos/future.hpp>
 #include <hpx/lcos/wait_any.hpp>
 #include <hpx/lcos/wait_all.hpp>
-#include <hpx/lcos/future_wait.hpp>
+#include <hpx/lcos/detail/static_locality_partitioner.hpp>
 #include <hpx/runtime/actions/plain_action.hpp>
 #include <hpx/runtime/naming/name.hpp>
 
 #include <vector>
+
+#include <boost/foreach.hpp>
 
 namespace hpx { namespace lcos {
     namespace detail
@@ -172,6 +175,7 @@ namespace hpx { namespace lcos {
         BOOST_PP_CAT(broadcast_impl, N)(
             Action const & act
           , std::vector<hpx::id_type> const & ids
+          , static_locality_partitioner const& part
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a)
           , boost::mpl::true_
         )
@@ -204,13 +208,14 @@ namespace hpx { namespace lcos {
                     broadcast_impl_action;
 
                 if(!ids_first.empty())
-                {
                     hpx::id_type id = hpx::get_colocation_id(ids_first[0]);
+
                     broadcast_futures.push_back(
                         hpx::async<broadcast_impl_action>(
                             id
                           , act
                           , boost::move(ids_first)
+                          , part
                           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
                           , boost::integral_constant<bool, true>::type()
                         )
@@ -225,6 +230,7 @@ namespace hpx { namespace lcos {
                             id
                           , act
                           , boost::move(ids_second)
+                          , part
                           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
                           , boost::integral_constant<bool, true>::type()
                         )
@@ -245,6 +251,7 @@ namespace hpx { namespace lcos {
         BOOST_PP_CAT(broadcast_impl, N)(
             Action const & act
           , std::vector<hpx::id_type> const & ids
+          , static_locality_partitioner const& part
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a)
           , boost::mpl::false_
         )
@@ -295,6 +302,7 @@ namespace hpx { namespace lcos {
                             id
                           , act
                           , boost::move(ids_first)
+                          , part
                           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
                           , boost::integral_constant<bool, false>::type()
                         )
@@ -309,6 +317,7 @@ namespace hpx { namespace lcos {
                             id
                           , act
                           , boost::move(ids_second)
+                          , part
                           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
                           , boost::integral_constant<bool, false>::type()
                         )
@@ -333,6 +342,7 @@ namespace hpx { namespace lcos {
             call(
                 Action const & act
               , std::vector<hpx::id_type> const & ids
+              , static_locality_partitioner const& part
               BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a)
               , IsVoid
             )
@@ -341,6 +351,7 @@ namespace hpx { namespace lcos {
                     BOOST_PP_CAT(broadcast_impl, N)(
                         act
                       , ids
+                      , part
                       BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
                       , IsVoid()
                     );
@@ -400,7 +411,8 @@ namespace hpx { namespace lcos {
                 dest
               , Action()
               , ids
-                BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
+              , static_locality_partitioner()
+              BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
               , typename boost::is_same<void, action_result>::type()
             );
     }
