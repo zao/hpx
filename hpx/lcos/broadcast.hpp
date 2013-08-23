@@ -13,7 +13,7 @@
 #include <hpx/lcos/future.hpp>
 #include <hpx/lcos/wait_any.hpp>
 #include <hpx/lcos/wait_all.hpp>
-#include <hpx/lcos/detail/static_locality_partitioner.hpp>
+#include <hpx/lcos/detail/static_partitioner.hpp>
 #include <hpx/runtime/actions/plain_action.hpp>
 #include <hpx/runtime/naming/name.hpp>
 
@@ -43,15 +43,17 @@ namespace hpx { namespace lcos {
                 type;
         };
 
-        template <typename Action, int N>
+        template <typename Action, typename Partitioner, int N>
         struct make_broadcast_action_impl;
 
         template <
             typename Action
+          , typename Partitioner
         >
         struct make_broadcast_action
           : make_broadcast_action_impl<
                 Action
+              , Partitioner
               , boost::fusion::result_of::size<
                     typename Action::arguments_type
                 >::value
@@ -168,22 +170,22 @@ namespace hpx { namespace lcos {
     {
         template <
             typename Action
+          , typename Partitioner
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, typename A)
         >
-        //hpx::future<void>
         void
         BOOST_PP_CAT(broadcast_impl, N)(
             Action const & act
           , std::vector<hpx::id_type> const & ids
-          , static_locality_partitioner const& part
+          , Partitioner const& part
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a)
           , boost::mpl::true_
         )
         {
-            if(ids.empty()) return;// hpx::lcos::make_ready_future();
+            if(ids.empty()) return;
 
             std::vector<hpx::future<void> > broadcast_futures;
-            broadcast_futures.reserve(3);
+            broadcast_futures.reserve(part.get_num_partitions(ids.size()));
 
             broadcast_futures.push_back(
                 hpx::async(
@@ -195,11 +197,9 @@ namespace hpx { namespace lcos {
 
             if(ids.size() > 1)
             {
-                std::size_t half = (ids.size() / 2) + 1;
-                std::vector<hpx::id_type>
-                    ids_first(ids.begin() + 1, ids.begin() + half);
-                std::vector<hpx::id_type>
-                    ids_second(ids.begin() + half, ids.end());
+                typedef std::vector<naming::id_type>::iterator iterator_type;
+                std::vector<std::pair<iterator_type, iterator_type> > id_ranges =
+                    part(ids.begin() + 1, ids.end());
 
                 typedef
                     typename detail::make_broadcast_action<
@@ -207,29 +207,17 @@ namespace hpx { namespace lcos {
                     >::type
                     broadcast_impl_action;
 
-                if(!ids_first.empty())
-                    hpx::id_type id = hpx::get_colocation_id(ids_first[0]);
-
-                    broadcast_futures.push_back(
-                        hpx::async<broadcast_impl_action>(
-                            id
-                          , act
-                          , boost::move(ids_first)
-                          , part
-                          BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
-                          , boost::integral_constant<bool, true>::type()
-                        )
-                    );
-                }
-
-                if(!ids_second.empty())
+                typedef std::pair<iterator_type, iterator_type> range_type;
+                BOOST_FOREACH(range_type& r, id_ranges)
                 {
-                    hpx::id_type id = hpx::get_colocation_id(ids_second[0]);
+                    hpx::id_type id = hpx::get_colocation_id(*r.first);
+                    std::vector<naming::id_type> id_range(r.first, r.second);
+
                     broadcast_futures.push_back(
                         hpx::async<broadcast_impl_action>(
                             id
                           , act
-                          , boost::move(ids_second)
+                          , boost::move(id_range)
                           , part
                           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
                           , boost::integral_constant<bool, true>::type()
@@ -238,20 +226,19 @@ namespace hpx { namespace lcos {
                 }
             }
 
-            //return hpx::when_all(broadcast_futures).then(&return_void);
-            hpx::when_all(broadcast_futures).then(&return_void).get();
+            return hpx::wait(hpx::when_all(broadcast_futures).then(&return_void));
         }
 
         template <
             typename Action
+          , typename Partitioner
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, typename A)
         >
-        //hpx::future<typename broadcast_result<Action>::type>
         typename broadcast_result<Action>::type
         BOOST_PP_CAT(broadcast_impl, N)(
             Action const & act
           , std::vector<hpx::id_type> const & ids
-          , static_locality_partitioner const& part
+          , Partitioner const& part
           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a)
           , boost::mpl::false_
         )
@@ -263,11 +250,10 @@ namespace hpx { namespace lcos {
                 typename broadcast_result<Action>::type
                 result_type;
 
-            //if(ids.empty()) return hpx::lcos::make_ready_future(result_type());
             if(ids.empty()) return result_type();
 
             std::vector<hpx::future<result_type> > broadcast_futures;
-            broadcast_futures.reserve(3);
+            broadcast_futures.reserve(part.get_num_partitions(ids.size()));
 
             broadcast_futures.push_back(
                 hpx::async(
@@ -282,11 +268,9 @@ namespace hpx { namespace lcos {
 
             if(ids.size() > 1)
             {
-                std::size_t half = (ids.size() / 2) + 1;
-                std::vector<hpx::id_type>
-                    ids_first(ids.begin() + 1, ids.begin() + half);
-                std::vector<hpx::id_type>
-                    ids_second(ids.begin() + half, ids.end());
+                typedef std::vector<naming::id_type>::iterator iterator_type;
+                std::vector<std::pair<iterator_type, iterator_type> > id_ranges =
+                    part(ids.begin() + 1, ids.end());
 
                 typedef
                     typename detail::make_broadcast_action<
@@ -294,29 +278,16 @@ namespace hpx { namespace lcos {
                     >::type
                     broadcast_impl_action;
 
-                if(!ids_first.empty())
+                BOOST_FOREACH(std::vector<naming::id_type>& id_range, id_ranges)
                 {
-                    hpx::id_type id = hpx::get_colocation_id(ids_first[0]);
-                    broadcast_futures.push_back(
-                        hpx::async<broadcast_impl_action>(
-                            id
-                          , act
-                          , boost::move(ids_first)
-                          , part
-                          BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
-                          , boost::integral_constant<bool, false>::type()
-                        )
-                    );
-                }
+                    hpx::id_type id = hpx::get_colocation_id(*r.first);
+                    std::vector<naming::id_type> id_range(r.first, r.second);
 
-                if(!ids_second.empty())
-                {
-                    hpx::id_type id = hpx::get_colocation_id(ids_second[0]);
                     broadcast_futures.push_back(
                         hpx::async<broadcast_impl_action>(
                             id
                           , act
-                          , boost::move(ids_second)
+                          , boost::move(id_range)
                           , part
                           BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
                           , boost::integral_constant<bool, false>::type()
@@ -337,12 +308,12 @@ namespace hpx { namespace lcos {
         >
         struct BOOST_PP_CAT(broadcast_invoker, N)
         {
-            //static hpx::future<typename broadcast_result<Action>::type>
+            template <typename Partitioner>
             static typename broadcast_result<Action>::type
             call(
                 Action const & act
               , std::vector<hpx::id_type> const & ids
-              , static_locality_partitioner const& part
+              , Partitioner const& part
               BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a)
               , IsVoid
             )
@@ -360,6 +331,7 @@ namespace hpx { namespace lcos {
 
         template <
             typename Action
+          , typename Partitioner
         >
         struct make_broadcast_action_impl<Action, N>
         {
@@ -369,6 +341,7 @@ namespace hpx { namespace lcos {
 
             typedef BOOST_PP_CAT(broadcast_invoker, N)<
                         Action
+                      , Partitioner
                       BOOST_PP_COMMA_IF(N)
                         BOOST_PP_ENUM(
                             N
@@ -411,7 +384,7 @@ namespace hpx { namespace lcos {
                 dest
               , Action()
               , ids
-              , static_locality_partitioner()
+              , static_partitioner()
               BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
               , typename boost::is_same<void, action_result>::type()
             );

@@ -15,9 +15,9 @@
 
 namespace hpx { namespace lcos
 {
-    struct static_locality_partitioner
+    struct static_partitioner
     {
-        static_locality_partitioner(std::size_t num_partitions = 2,
+        static_partitioner(std::size_t num_partitions = 2,
                 std::size_t min_partition_size = 1)
           : num_partitions_(num_partitions),
             min_partition_size_(min_partition_size)
@@ -26,37 +26,48 @@ namespace hpx { namespace lcos
             BOOST_ASSERT(min_partition_size_ != 0);
         }
 
-        std::vector<std::vector<naming::id_type> >
-        operator()(std::vector<naming::id_type>::const_iterator begin,
-            std::vector<naming::id_type>::const_iterator end) const
+        template <typename Iterator>
+        std::vector<std::pair<Iterator, Iterator> >
+        operator()(Iterator begin, Iterator end) const
         {
-            std::vector<std::vector<naming::id_type> > result;
-
-            typedef std::vector<naming::id_type>::const_iterator iterator;
+            std::vector<std::pair<Iterator, Iterator> > result;
 
             std::size_t num_localities = std::distance(begin, end);
-            std::size_t max_num_partitions = num_localities / min_partition_size_;
-            std::size_t partition_size =
-                num_localities / (std::min)(num_partitions_, max_num_partitions);
+            std::size_t partition_size = get_partition_size(num_localities);
 
-
-            for (iterator it = begin; it != end; /**/)
+            for (Iterator it = begin; it != end; /**/)
             {
                 std::size_t num_entries_left = std::distance(it, end);
                 std::size_t next_size = (std::min)(num_entries_left, partition_size);
 
-                iterator partition_end = it + next_size;
-                result.push_back(std::vector<naming::id_type>(it, partition_end));
+                Iterator partition_end = it + next_size;
+                result.push_back(std::make_pair(it, partition_end));
+
                 it = partition_end;
             }
 
             return boost::move(result);
         }
 
+        std::size_t get_partition_size(std::size_t range_size) const
+        {
+            std::size_t max_num_partitions = range_size / min_partition_size_;
+            std::size_t partition_size =
+                range_size / (std::min)(num_partitions_, max_num_partitions);
+            return partition_size;
+        }
+
+        std::size_t get_num_partitions(std::size_t range_size) const
+        {
+            std::size_t partition_size = get_partition_size(range_size);
+            return range_size / partition_size + 1;
+        }
+
         std::size_t num_partitions_;
         std::size_t min_partition_size_;
 
     private:
+
         friend class boost::serialization::access;
 
         template <class Archive>

@@ -11,6 +11,7 @@ set(tests
     function
     merging_map
     parse_slurm_nodelist
+    static_partitioner
    )
 
 set(merging_map_FLAGS NOLIBS)
