@@ -112,7 +112,8 @@ namespace hpx { namespace actions
             /// but the header in which the action is defined misses a
             /// HPX_REGISTER_ACTION_DECLARATION
             BOOST_MPL_ASSERT_MSG(
-                traits::needs_automatic_registration<Action>::value
+                traits::needs_automatic_registration<
+                    transfer_action<Action> >::value
               , HPX_REGISTER_ACTION_DECLARATION_MISSING
               , (Action)
             );
@@ -159,13 +160,13 @@ namespace hpx { namespace actions
             }
         };
 
-        template <typename Action, typename Enable =
-            typename traits::needs_automatic_registration<Action>::type>
+        template <typename TransferAction, typename Enable =
+            typename traits::needs_automatic_registration<TransferAction>::type>
         struct automatic_action_registration
         {
             automatic_action_registration()
             {
-                action_registration<Action> auto_register;
+                action_registration<TransferAction> auto_register;
             }
 
             automatic_action_registration & register_action()
@@ -174,8 +175,21 @@ namespace hpx { namespace actions
             }
         };
 
-        template <typename Action>
-        struct automatic_action_registration<Action, boost::mpl::false_>
+        template <typename TransferAction>
+        struct automatic_action_registration<TransferAction, boost::mpl::false_>
+        {
+            automatic_action_registration()
+            {
+            }
+
+            automatic_action_registration & register_action()
+            {
+                return *this;
+            }
+        };
+
+        template <>
+        struct automatic_action_registration<util::unused_type>
         {
             automatic_action_registration()
             {
@@ -365,7 +379,7 @@ namespace hpx { namespace actions
     }
 
     template <typename Action>
-    struct init_registration;
+    struct init_action_registration;
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename Action>
@@ -457,7 +471,7 @@ namespace hpx { namespace actions
         //
         ~transfer_action()
         {
-            init_registration<transfer_action<Action> >::g.register_action();
+            init_action_registration<transfer_action<Action> >::g.register_action();
         }
 
     public:
@@ -1110,7 +1124,7 @@ namespace hpx { namespace actions
 #define HPX_ACTION_REGISTER_ACTION_FACTORY(Action, Name)                      \
     static ::hpx::actions::detail::action_registration<Action>                \
         const BOOST_PP_CAT(Name, _action_factory_registration) =              \
-        ::hpx::actions::detail::action_registration<Action>();                \
+            ::hpx::actions::detail::action_registration<Action>();            \
 /**/
 
 #define HPX_REGISTER_ACTION_(...)                                             \
@@ -1141,6 +1155,13 @@ namespace hpx { namespace actions
           : boost::mpl::false_                                                \
         {};                                                                   \
     }}                                                                        \
+    namespace hpx { namespace actions {                                       \
+        template <>                                                           \
+        struct init_action_registration<action>                               \
+          : init_action_registration<util::unused_type>                       \
+        {                                                                     \
+        };                                                                    \
+    }}                                                                        \
 /**/
 
 #define HPX_REGISTER_ACTION_DECLARATION_(...)                                 \
@@ -1160,15 +1181,21 @@ namespace hpx { namespace actions
 namespace hpx { namespace actions
 {
     template <typename Action>
-    struct init_registration<transfer_action<Action> >
+    struct init_action_registration<transfer_action<Action> >
     {
         static detail::automatic_action_registration<transfer_action<Action> > g;
     };
 
     template <typename Action>
     detail::automatic_action_registration<transfer_action<Action> >
-        init_registration<transfer_action<Action> >::g =
+        init_action_registration<transfer_action<Action> >::g =
             detail::automatic_action_registration<transfer_action<Action> >();
+
+    template <>
+    struct init_action_registration<util::unused_type>
+    {
+        HPX_EXPORT static detail::automatic_action_registration<util::unused_type> g;
+    };
 }}
 
 #if 0 //WIP

@@ -152,6 +152,19 @@ namespace hpx { namespace actions
                 return *this;
             }
         };
+
+        template <>
+        struct automatic_continuation_registration<util::unused_type>
+        {
+            automatic_continuation_registration()
+            {
+            }
+
+            automatic_continuation_registration & register_continuation()
+            {
+                return *this;
+            }
+        };
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -300,7 +313,7 @@ namespace hpx { namespace actions
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename Continuation>
-    struct init_registration;
+    struct init_continuation_registration;
 
     ///////////////////////////////////////////////////////////////////////////
     template <typename Result>
@@ -336,7 +349,7 @@ namespace hpx { namespace actions
 
         virtual ~typed_continuation()
         {
-            init_registration<typed_continuation>::g.register_continuation();
+            init_continuation_registration<typed_continuation>::g.register_continuation();
         }
 
         void trigger_value(BOOST_RV_REF(Result) result) const
@@ -396,9 +409,15 @@ namespace hpx { namespace actions
     ///////////////////////////////////////////////////////////////////////////
     // registration code for serialization
     template <typename Result>
-    struct init_registration<typed_continuation<Result> >
+    struct init_continuation_registration<typed_continuation<Result> >
     {
         static detail::automatic_continuation_registration<typed_continuation<Result> > g;
+    };
+
+    template <>
+    struct init_continuation_registration<util::unused_type>
+    {
+        HPX_EXPORT static detail::automatic_continuation_registration<util::unused_type> g;
     };
 }}
 
@@ -447,7 +466,7 @@ namespace hpx { namespace actions
 
         virtual ~typed_continuation()
         {
-            init_registration<typed_continuation>::g.register_continuation();
+            init_continuation_registration<typed_continuation>::g.register_continuation();
         }
 
         void trigger() const
@@ -522,7 +541,7 @@ namespace hpx { namespace actions
     ///////////////////////////////////////////////////////////////////////////
     template <typename Result>
     detail::automatic_continuation_registration<typed_continuation<Result> >
-        init_registration<typed_continuation<Result> >::g =
+        init_continuation_registration<typed_continuation<Result> >::g =
             detail::automatic_continuation_registration<typed_continuation<Result> >();
 }}
 
@@ -616,6 +635,13 @@ namespace hpx
                 hpx::actions::typed_continuation<Result> >                    \
           : boost::mpl::false_                                                \
         {};                                                                   \
+    }}                                                                        \
+    namespace hpx { namespace actions {                                       \
+        template <>                                                           \
+        struct init_continuation_registration<typed_continuation<Result> >    \
+          : init_continuation_registration<hpx::util::unused_type>            \
+        {                                                                     \
+        };                                                                    \
     }}                                                                        \
 /**/
 

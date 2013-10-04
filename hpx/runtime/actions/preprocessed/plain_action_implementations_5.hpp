@@ -373,44 +373,6 @@ namespace hpx { namespace actions
             T0, F, Derived>
     {};
 }}
-namespace hpx { namespace traits
-{
-    template <typename Arg0,
-        void (*F)(Arg0), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_action1<
-                    Arg0, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename Arg0,
-        void (*F)(Arg0), typename Derived,
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_action1<
-                    Arg0, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0,
-        R(*F)(Arg0), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_result_action1<
-                    R, Arg0, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0,
-        R(*F)(Arg0), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_result_action1<
-                    R, Arg0, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-}}
 namespace hpx { namespace actions
 {
     
@@ -774,44 +736,6 @@ namespace hpx { namespace actions
                 void, T0 , T1, F, Derived>
       : plain_action2<
             T0 , T1, F, Derived>
-    {};
-}}
-namespace hpx { namespace traits
-{
-    template <typename Arg0 , typename Arg1,
-        void (*F)(Arg0 , Arg1), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_action2<
-                    Arg0 , Arg1, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename Arg0 , typename Arg1,
-        void (*F)(Arg0 , Arg1), typename Derived,
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_action2<
-                    Arg0 , Arg1, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1,
-        R(*F)(Arg0 , Arg1), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_result_action2<
-                    R, Arg0 , Arg1, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1,
-        R(*F)(Arg0 , Arg1), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_result_action2<
-                    R, Arg0 , Arg1, F, Derived> >, Enable>
-      : boost::mpl::false_
     {};
 }}
 namespace hpx { namespace actions
@@ -1179,44 +1103,6 @@ namespace hpx { namespace actions
             T0 , T1 , T2, F, Derived>
     {};
 }}
-namespace hpx { namespace traits
-{
-    template <typename Arg0 , typename Arg1 , typename Arg2,
-        void (*F)(Arg0 , Arg1 , Arg2), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_action3<
-                    Arg0 , Arg1 , Arg2, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename Arg0 , typename Arg1 , typename Arg2,
-        void (*F)(Arg0 , Arg1 , Arg2), typename Derived,
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_action3<
-                    Arg0 , Arg1 , Arg2, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1 , typename Arg2,
-        R(*F)(Arg0 , Arg1 , Arg2), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_result_action3<
-                    R, Arg0 , Arg1 , Arg2, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1 , typename Arg2,
-        R(*F)(Arg0 , Arg1 , Arg2), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_result_action3<
-                    R, Arg0 , Arg1 , Arg2, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-}}
 namespace hpx { namespace actions
 {
     
@@ -1582,44 +1468,6 @@ namespace hpx { namespace actions
             T0 , T1 , T2 , T3, F, Derived>
     {};
 }}
-namespace hpx { namespace traits
-{
-    template <typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3,
-        void (*F)(Arg0 , Arg1 , Arg2 , Arg3), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_action4<
-                    Arg0 , Arg1 , Arg2 , Arg3, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3,
-        void (*F)(Arg0 , Arg1 , Arg2 , Arg3), typename Derived,
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_action4<
-                    Arg0 , Arg1 , Arg2 , Arg3, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3,
-        R(*F)(Arg0 , Arg1 , Arg2 , Arg3), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_result_action4<
-                    R, Arg0 , Arg1 , Arg2 , Arg3, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3,
-        R(*F)(Arg0 , Arg1 , Arg2 , Arg3), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_result_action4<
-                    R, Arg0 , Arg1 , Arg2 , Arg3, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-}}
 namespace hpx { namespace actions
 {
     
@@ -1983,43 +1831,5 @@ namespace hpx { namespace actions
                 void, T0 , T1 , T2 , T3 , T4, F, Derived>
       : plain_action5<
             T0 , T1 , T2 , T3 , T4, F, Derived>
-    {};
-}}
-namespace hpx { namespace traits
-{
-    template <typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3 , typename Arg4,
-        void (*F)(Arg0 , Arg1 , Arg2 , Arg3 , Arg4), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_action5<
-                    Arg0 , Arg1 , Arg2 , Arg3 , Arg4, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3 , typename Arg4,
-        void (*F)(Arg0 , Arg1 , Arg2 , Arg3 , Arg4), typename Derived,
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_action5<
-                    Arg0 , Arg1 , Arg2 , Arg3 , Arg4, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3 , typename Arg4,
-        R(*F)(Arg0 , Arg1 , Arg2 , Arg3 , Arg4), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_result_action5<
-                    R, Arg0 , Arg1 , Arg2 , Arg3 , Arg4, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    template <typename R, typename Arg0 , typename Arg1 , typename Arg2 , typename Arg3 , typename Arg4,
-        R(*F)(Arg0 , Arg1 , Arg2 , Arg3 , Arg4), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_result_action5<
-                    R, Arg0 , Arg1 , Arg2 , Arg3 , Arg4, F, Derived> >, Enable>
-      : boost::mpl::false_
     {};
 }}

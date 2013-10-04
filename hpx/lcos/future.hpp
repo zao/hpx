@@ -773,7 +773,7 @@ namespace hpx { namespace actions
 
         ~typed_continuation()
         {
-            init_registration<typed_continuation>::g.register_continuation();
+            init_continuation_registration<typed_continuation>::g.register_continuation();
         }
 
         void deferred_trigger(lcos::future<Result> result) const
@@ -883,7 +883,7 @@ namespace hpx { namespace actions
 
         ~typed_continuation()
         {
-            init_registration<typed_continuation>::g.register_continuation();
+            init_continuation_registration<typed_continuation>::g.register_continuation();
         }
 
         void deferred_trigger(lcos::future<void> result) const

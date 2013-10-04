@@ -36,6 +36,11 @@ namespace hpx
 namespace hpx { namespace actions
 {
     ///////////////////////////////////////////////////////////////////////////
+    HPX_EXPORT detail::automatic_continuation_registration<util::unused_type>
+        init_continuation_registration<util::unused_type>::g =
+            detail::automatic_continuation_registration<util::unused_type>();
+
+    ///////////////////////////////////////////////////////////////////////////
     void continuation::trigger() const
     {
         if (!gid_) {

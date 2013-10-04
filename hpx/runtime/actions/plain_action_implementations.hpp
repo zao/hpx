@@ -465,49 +465,6 @@ namespace hpx { namespace actions
     {};
 }}
 
-// Disabling the guid initialization stuff for plain actions
-namespace hpx { namespace traits
-{
-    template <BOOST_PP_ENUM_PARAMS(N, typename Arg),
-        void (*F)(BOOST_PP_ENUM_PARAMS(N, Arg)), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                BOOST_PP_CAT(hpx::actions::plain_action, N)<
-                    BOOST_PP_ENUM_PARAMS(N, Arg), F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-
-    template <BOOST_PP_ENUM_PARAMS(N, typename Arg),
-        void (*F)(BOOST_PP_ENUM_PARAMS(N, Arg)), typename Derived,
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                BOOST_PP_CAT(hpx::actions::plain_direct_action, N)<
-                    BOOST_PP_ENUM_PARAMS(N, Arg), F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-
-    template <typename R, BOOST_PP_ENUM_PARAMS(N, typename Arg),
-        R(*F)(BOOST_PP_ENUM_PARAMS(N, Arg)), typename Derived, 
-        typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                BOOST_PP_CAT(hpx::actions::plain_result_action, N)<
-                    R, BOOST_PP_ENUM_PARAMS(N, Arg), F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-
-    template <typename R, BOOST_PP_ENUM_PARAMS(N, typename Arg),
-        R(*F)(BOOST_PP_ENUM_PARAMS(N, Arg)), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                BOOST_PP_CAT(hpx::actions::plain_direct_result_action, N)<
-                    R, BOOST_PP_ENUM_PARAMS(N, Arg), F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-}}
-
 ///////////////////////////////////////////////////////////////////////////////
 #undef HPX_REMOVE_QUALIFIERS
 #undef HPX_ACTION_DIRECT_ARGUMENT

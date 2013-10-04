@@ -22,6 +22,11 @@
 namespace hpx { namespace actions
 {
     ///////////////////////////////////////////////////////////////////////////
+    HPX_EXPORT detail::automatic_action_registration<util::unused_type>
+        init_action_registration<util::unused_type>::g =
+            detail::automatic_action_registration<util::unused_type>();
+
+    ///////////////////////////////////////////////////////////////////////////
     // Call-back function for parcelHandler to call when new parcels are received
     void action_manager::fetch_parcel(
         parcelset::parcelhandler& parcel_handler,

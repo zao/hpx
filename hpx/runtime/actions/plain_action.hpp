@@ -380,41 +380,6 @@ namespace hpx { namespace actions
     /// \endcond
 }}
 
-
-// Disabling the guid initialization stuff for plain actions
-namespace hpx { namespace traits
-{
-    /// \cond NOINTERNAL
-    template <void (*F)(), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_action0<F, Derived> > , Enable>
-      : boost::mpl::false_
-    {};
-
-    template <void (*F)(), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_action0<F, Derived> > , Enable>
-      : boost::mpl::false_
-    {};
-
-    template <typename R, R(*F)(), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_result_action0<R, F, Derived> > , Enable>
-      : boost::mpl::false_
-    {};
-
-    template <typename R, R(*F)(), typename Derived, typename Enable>
-    struct needs_guid_initialization<
-            hpx::actions::transfer_action<
-                hpx::actions::plain_direct_result_action0<R, F, Derived> >, Enable>
-      : boost::mpl::false_
-    {};
-    /// \endcond
-}}
-
 /// \def HPX_REGISTER_PLAIN_ACTION(action_type)
 /// \brief Registers an existing free function as a plain action with HPX
 ///
@@ -447,6 +412,7 @@ namespace hpx { namespace traits
 ///       // The second argument used has to be the same as used for the 
 ///       // HPX_DEFINE_PLAIN_ACTION above.
 ///       HPX_REGISTER_PLAIN_ACTION(app::some_global_action, some_global_action);
+///
 /// \endcode
 ///
 /// \note Usually this macro will not be used in user code unless the intend is
@@ -493,6 +459,7 @@ namespace hpx { namespace traits
 ///       //
 ///       // Please note the extra parenthesis around both macro arguments.
 ///       HPX_REGISTER_PLAIN_ACTION_TEMPLATE((template <typename T>), (app::some_global_action<T>));
+///
 /// \endcode
 ///
 #define HPX_REGISTER_PLAIN_ACTION_TEMPLATE(template_, action_type)            \
@@ -526,6 +493,7 @@ namespace hpx { namespace traits
 ///       // The second argument used has to be the same as used for the 
 ///       // HPX_DEFINE_PLAIN_ACTION above.
 ///       HPX_REGISTER_PLAIN_ACTION(app::some_global_action, some_global_action);
+///
 /// \endcode
 ///
 /// \note Usually this macro will not be used in user code unless the intend is
@@ -570,6 +538,7 @@ namespace hpx { namespace traits
 ///     // This will define the action type 'some_global_action' which represents
 ///     // the function 'app::some_global_function'.
 ///     HPX_PLAIN_ACTION(app::some_global_function, some_global_action);
+///
 /// \endcode
 ///
 /// \note The macro \a HPX_PLAIN_ACTION has to be used at global namespace even
@@ -609,14 +578,17 @@ namespace hpx { namespace traits
 /**/
 #define HPX_PLAIN_ACTION_1(func)                                              \
     HPX_DEFINE_PLAIN_ACTION(func, BOOST_PP_CAT(func, _action));               \
+    HPX_REGISTER_PLAIN_ACTION_DECLARATION(BOOST_PP_CAT(func, _action))        \
     HPX_REGISTER_PLAIN_ACTION_1(BOOST_PP_CAT(func, _action))                  \
 /**/
 #define HPX_PLAIN_ACTION_2(func, name)                                        \
     HPX_DEFINE_PLAIN_ACTION(func, name);                                      \
+    HPX_REGISTER_PLAIN_ACTION_DECLARATION(name);                              \
     HPX_REGISTER_PLAIN_ACTION_1(name)                                         \
 /**/
 #define HPX_PLAIN_ACTION_3(func, name, state)                                 \
     HPX_DEFINE_PLAIN_ACTION(func, name);                                      \
+    HPX_REGISTER_PLAIN_ACTION_DECLARATION(name);                              \
     HPX_REGISTER_PLAIN_ACTION_3(name, name, state)                            \
 /**/
 
@@ -628,14 +600,17 @@ namespace hpx { namespace traits
 /**/
 #define HPX_PLAIN_DIRECT_ACTION_1(func)                                       \
     HPX_DEFINE_PLAIN_DIRECT_ACTION(func, BOOST_PP_CAT(func, _action));        \
+    HPX_REGISTER_PLAIN_ACTION_DECLARATION(BOOST_PP_CAT(func, _action));       \
     HPX_REGISTER_PLAIN_ACTION_1(BOOST_PP_CAT(func, _action))                  \
 /**/
 #define HPX_PLAIN_DIRECT_ACTION_2(func, name)                                 \
     HPX_DEFINE_PLAIN_DIRECT_ACTION(func, name);                               \
+    HPX_REGISTER_PLAIN_ACTION_DECLARATION(name);                              \
     HPX_REGISTER_PLAIN_ACTION_1(name)                                         \
 /**/
 #define HPX_PLAIN_DIRECT_ACTION_3(func, name, state)                          \
     HPX_DEFINE_PLAIN_DIRECT_ACTION(func, name);                               \
+    HPX_REGISTER_PLAIN_ACTION_DECLARATION(name);                              \
     HPX_REGISTER_PLAIN_ACTION_3(name, name, state)                            \
 /**/
 
@@ -645,11 +620,9 @@ namespace hpx { namespace traits
 /// action was declared in a header, and is defined in a source file. Use this
 /// macro in the header, and \a HPX_REGISTER_PLAIN_ACTION in the source file
 #define HPX_REGISTER_PLAIN_ACTION_DECLARATION(plain_action)                   \
-    namespace hpx { namespace actions { namespace detail {                    \
-        template <>                                                           \
-        HPX_ALWAYS_EXPORT const char *                                        \
-        get_action_name<plain_action>();                                      \
-    }}}                                                                       \
+    HPX_REGISTER_ACTION_DECLARATION_NO_DEFAULT_GUID1(plain_action)            \
+    HPX_REGISTER_ACTION_DECLARATION_NO_DEFAULT_GUID2(                         \
+        hpx::actions::transfer_action<plain_action>)                          \
 /**/
 
 /// \endcond
