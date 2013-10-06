@@ -112,6 +112,17 @@ namespace hpx { namespace lcos {
 
             return boost::move(res);
         }
+
+        inline std::vector<hpx::id_type> resolve_futures(
+            std::vector<hpx::future<hpx::id_type> > const& fids)
+        {
+            std::vector<hpx::id_type> ids;
+            BOOST_FOREACH(hpx::future<hpx::id_type> const& f, fids)
+            {
+                ids.push_back(f.get());
+            }
+            return ids;
+        }
     }
 }}
 
@@ -649,6 +660,55 @@ namespace hpx { namespace lcos {
                 ids
               BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
             );
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    namespace detail
+    {
+        template <
+            typename Action
+          BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, typename A)
+        >
+        hpx::future<
+            typename detail::broadcast_result<Action>::type
+        >
+        BOOST_PP_CAT(invoke_broadcast, N)(
+            std::vector<hpx::future<hpx::id_type> > const & fids
+          BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a))
+        {
+            return broadcast<Action>(resolve_futures(fids)
+              BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a));
+        }
+    }
+
+    template <
+        typename Action
+      BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, typename A)
+    >
+    hpx::future<
+        typename detail::broadcast_result<Action>::type
+    >
+    broadcast(
+        std::vector<hpx::future<hpx::id_type> > const & ids
+      BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_BINARY_PARAMS(N, A, const & a))
+    {
+        typedef typename detail::broadcast_result<Action>::type result_type;
+        typedef result_type (*invoke_broadcast_func)(
+            std::vector<hpx::future<hpx::id_type> > const&
+          BOOST_PP_COMMA_IF(N)
+                BOOST_PP_ENUM_BINARY_PARAMS(N, A, const& BOOST_PP_INTERCEPT));
+
+        return when_all(ids).then(
+            util::bind(
+                (invoke_broadcast_func)
+                    &detail::BOOST_PP_CAT(invoke_broadcast, N)<
+                        Action
+                      BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, A)
+                    >
+              , util::placeholders::_1
+              BOOST_PP_COMMA_IF(N) BOOST_PP_ENUM_PARAMS(N, a)
+            )
+        );
     }
 }}
 

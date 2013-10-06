@@ -369,6 +369,52 @@ namespace hpx { namespace lcos {
                
             );
     }
+    
+    namespace detail
+    {
+        template <
+            typename Action
+           
+        >
+        hpx::future<
+            typename detail::broadcast_result<Action>::type
+        >
+        invoke_broadcast0(
+            std::vector<hpx::future<hpx::id_type> > const & fids
+           )
+        {
+            return broadcast<Action>(resolve_futures(fids)
+               );
+        }
+    }
+    template <
+        typename Action
+       
+    >
+    hpx::future<
+        typename detail::broadcast_result<Action>::type
+    >
+    broadcast(
+        std::vector<hpx::future<hpx::id_type> > const & ids
+       )
+    {
+        typedef typename detail::broadcast_result<Action>::type result_type;
+        typedef result_type (*invoke_broadcast_func)(
+            std::vector<hpx::future<hpx::id_type> > const&
+          
+                );
+        return when_all(ids).then(
+            util::bind(
+                (invoke_broadcast_func)
+                    &detail::invoke_broadcast0<
+                        Action
+                       
+                    >
+              , util::placeholders::_1
+               
+            )
+        );
+    }
 }}
 namespace hpx { namespace lcos {
     namespace detail
@@ -730,6 +776,52 @@ namespace hpx { namespace lcos {
                 ids
               , a0
             );
+    }
+    
+    namespace detail
+    {
+        template <
+            typename Action
+          , typename A0
+        >
+        hpx::future<
+            typename detail::broadcast_result<Action>::type
+        >
+        invoke_broadcast1(
+            std::vector<hpx::future<hpx::id_type> > const & fids
+          , A0 const & a0)
+        {
+            return broadcast<Action>(resolve_futures(fids)
+              , a0);
+        }
+    }
+    template <
+        typename Action
+      , typename A0
+    >
+    hpx::future<
+        typename detail::broadcast_result<Action>::type
+    >
+    broadcast(
+        std::vector<hpx::future<hpx::id_type> > const & ids
+      , A0 const & a0)
+    {
+        typedef typename detail::broadcast_result<Action>::type result_type;
+        typedef result_type (*invoke_broadcast_func)(
+            std::vector<hpx::future<hpx::id_type> > const&
+          ,
+                A0 const&);
+        return when_all(ids).then(
+            util::bind(
+                (invoke_broadcast_func)
+                    &detail::invoke_broadcast1<
+                        Action
+                      , A0
+                    >
+              , util::placeholders::_1
+              , a0
+            )
+        );
     }
 }}
 namespace hpx { namespace lcos {
@@ -1093,6 +1185,52 @@ namespace hpx { namespace lcos {
               , a0 , a1
             );
     }
+    
+    namespace detail
+    {
+        template <
+            typename Action
+          , typename A0 , typename A1
+        >
+        hpx::future<
+            typename detail::broadcast_result<Action>::type
+        >
+        invoke_broadcast2(
+            std::vector<hpx::future<hpx::id_type> > const & fids
+          , A0 const & a0 , A1 const & a1)
+        {
+            return broadcast<Action>(resolve_futures(fids)
+              , a0 , a1);
+        }
+    }
+    template <
+        typename Action
+      , typename A0 , typename A1
+    >
+    hpx::future<
+        typename detail::broadcast_result<Action>::type
+    >
+    broadcast(
+        std::vector<hpx::future<hpx::id_type> > const & ids
+      , A0 const & a0 , A1 const & a1)
+    {
+        typedef typename detail::broadcast_result<Action>::type result_type;
+        typedef result_type (*invoke_broadcast_func)(
+            std::vector<hpx::future<hpx::id_type> > const&
+          ,
+                A0 const& , A1 const&);
+        return when_all(ids).then(
+            util::bind(
+                (invoke_broadcast_func)
+                    &detail::invoke_broadcast2<
+                        Action
+                      , A0 , A1
+                    >
+              , util::placeholders::_1
+              , a0 , a1
+            )
+        );
+    }
 }}
 namespace hpx { namespace lcos {
     namespace detail
@@ -1454,6 +1592,52 @@ namespace hpx { namespace lcos {
                 ids
               , a0 , a1 , a2
             );
+    }
+    
+    namespace detail
+    {
+        template <
+            typename Action
+          , typename A0 , typename A1 , typename A2
+        >
+        hpx::future<
+            typename detail::broadcast_result<Action>::type
+        >
+        invoke_broadcast3(
+            std::vector<hpx::future<hpx::id_type> > const & fids
+          , A0 const & a0 , A1 const & a1 , A2 const & a2)
+        {
+            return broadcast<Action>(resolve_futures(fids)
+              , a0 , a1 , a2);
+        }
+    }
+    template <
+        typename Action
+      , typename A0 , typename A1 , typename A2
+    >
+    hpx::future<
+        typename detail::broadcast_result<Action>::type
+    >
+    broadcast(
+        std::vector<hpx::future<hpx::id_type> > const & ids
+      , A0 const & a0 , A1 const & a1 , A2 const & a2)
+    {
+        typedef typename detail::broadcast_result<Action>::type result_type;
+        typedef result_type (*invoke_broadcast_func)(
+            std::vector<hpx::future<hpx::id_type> > const&
+          ,
+                A0 const& , A1 const& , A2 const&);
+        return when_all(ids).then(
+            util::bind(
+                (invoke_broadcast_func)
+                    &detail::invoke_broadcast3<
+                        Action
+                      , A0 , A1 , A2
+                    >
+              , util::placeholders::_1
+              , a0 , a1 , a2
+            )
+        );
     }
 }}
 namespace hpx { namespace lcos {
@@ -1817,6 +2001,52 @@ namespace hpx { namespace lcos {
               , a0 , a1 , a2 , a3
             );
     }
+    
+    namespace detail
+    {
+        template <
+            typename Action
+          , typename A0 , typename A1 , typename A2 , typename A3
+        >
+        hpx::future<
+            typename detail::broadcast_result<Action>::type
+        >
+        invoke_broadcast4(
+            std::vector<hpx::future<hpx::id_type> > const & fids
+          , A0 const & a0 , A1 const & a1 , A2 const & a2 , A3 const & a3)
+        {
+            return broadcast<Action>(resolve_futures(fids)
+              , a0 , a1 , a2 , a3);
+        }
+    }
+    template <
+        typename Action
+      , typename A0 , typename A1 , typename A2 , typename A3
+    >
+    hpx::future<
+        typename detail::broadcast_result<Action>::type
+    >
+    broadcast(
+        std::vector<hpx::future<hpx::id_type> > const & ids
+      , A0 const & a0 , A1 const & a1 , A2 const & a2 , A3 const & a3)
+    {
+        typedef typename detail::broadcast_result<Action>::type result_type;
+        typedef result_type (*invoke_broadcast_func)(
+            std::vector<hpx::future<hpx::id_type> > const&
+          ,
+                A0 const& , A1 const& , A2 const& , A3 const&);
+        return when_all(ids).then(
+            util::bind(
+                (invoke_broadcast_func)
+                    &detail::invoke_broadcast4<
+                        Action
+                      , A0 , A1 , A2 , A3
+                    >
+              , util::placeholders::_1
+              , a0 , a1 , a2 , a3
+            )
+        );
+    }
 }}
 namespace hpx { namespace lcos {
     namespace detail
@@ -2178,5 +2408,51 @@ namespace hpx { namespace lcos {
                 ids
               , a0 , a1 , a2 , a3 , a4
             );
+    }
+    
+    namespace detail
+    {
+        template <
+            typename Action
+          , typename A0 , typename A1 , typename A2 , typename A3 , typename A4
+        >
+        hpx::future<
+            typename detail::broadcast_result<Action>::type
+        >
+        invoke_broadcast5(
+            std::vector<hpx::future<hpx::id_type> > const & fids
+          , A0 const & a0 , A1 const & a1 , A2 const & a2 , A3 const & a3 , A4 const & a4)
+        {
+            return broadcast<Action>(resolve_futures(fids)
+              , a0 , a1 , a2 , a3 , a4);
+        }
+    }
+    template <
+        typename Action
+      , typename A0 , typename A1 , typename A2 , typename A3 , typename A4
+    >
+    hpx::future<
+        typename detail::broadcast_result<Action>::type
+    >
+    broadcast(
+        std::vector<hpx::future<hpx::id_type> > const & ids
+      , A0 const & a0 , A1 const & a1 , A2 const & a2 , A3 const & a3 , A4 const & a4)
+    {
+        typedef typename detail::broadcast_result<Action>::type result_type;
+        typedef result_type (*invoke_broadcast_func)(
+            std::vector<hpx::future<hpx::id_type> > const&
+          ,
+                A0 const& , A1 const& , A2 const& , A3 const& , A4 const&);
+        return when_all(ids).then(
+            util::bind(
+                (invoke_broadcast_func)
+                    &detail::invoke_broadcast5<
+                        Action
+                      , A0 , A1 , A2 , A3 , A4
+                    >
+              , util::placeholders::_1
+              , a0 , a1 , a2 , a3 , a4
+            )
+        );
     }
 }}

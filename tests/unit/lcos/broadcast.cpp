@@ -129,6 +129,31 @@ int hpx_main()
 
         hpx::lcos::broadcast_with_index<f4_idx_action>(localities, 0).get();
     }
+
+    std::vector<hpx::future<hpx::id_type> > flocalities; // = hpx::find_all_localities();
+    {
+        std::vector<boost::uint32_t> f1_res;
+        f1_res = hpx::lcos::broadcast<f1_action>(flocalities).get();
+
+        //HPX_TEST_EQ(f1_res.size(), localities.size());
+        //for(std::size_t i = 0; i < f1_res.size(); ++i)
+        //{
+        //    HPX_TEST_EQ(f1_res[i], hpx::naming::get_locality_id_from_id(localities[i]));
+        //}
+
+        //hpx::lcos::broadcast<f2_action>(localities).get();
+
+        //std::vector<boost::uint32_t> f3_res;
+        //f3_res = hpx::lcos::broadcast<f3_action>(localities, 1).get();
+
+        //HPX_TEST_EQ(f3_res.size(), localities.size());
+        //for(std::size_t i = 0; i < f3_res.size(); ++i)
+        //{
+        //    HPX_TEST_EQ(f3_res[i], hpx::naming::get_locality_id_from_id(localities[i]) + 1);
+        //}
+
+        //hpx::lcos::broadcast<f4_action>(localities, 0).get();
+    }
     return hpx::finalize();
 }
 
