@@ -139,6 +139,8 @@ namespace hpx { namespace lcos { namespace detail
             future_base_type this_(this);
             applier::register_thread_plain(
                 HPX_STD_BIND(async_impl_ptr, this_, f),
+                naming::get_id_from_locality_id(hpx::get_locality_id()),
+                f.make_fake_id(),
                 "continuation_base::async");
 
             if (&ec != &throws)

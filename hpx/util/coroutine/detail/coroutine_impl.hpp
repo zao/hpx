@@ -81,17 +81,30 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
     typedef boost::intrusive_ptr<type> pointer;
 
     template <typename DerivedType>
-    coroutine_impl(DerivedType *this_, thread_id_repr_type id,
-            std::ptrdiff_t stack_size)
-      : context_base_(*this_, stack_size, id),
+    coroutine_impl(
+            DerivedType *this_
+          , BOOST_RV_REF(naming::id_type) target
+          , BOOST_RV_REF(naming::id_type) output_lco
+          , BOOST_RV_REF(naming::id_type) input_lco
+          , thread_id_repr_type id
+          , std::ptrdiff_t stack_size
+        )
+      : context_base_(*this_,
+            boost::move(target), boost::move(output_lco),
+            boost::move(input_lco), id, stack_size),
         m_arg(0),
         m_result(0)
     {}
 
     template <typename Functor>
-    static inline type* create(BOOST_FWD_REF(Functor),
-        BOOST_RV_REF(naming::id_type) target, thread_id_repr_type = 0,
-        std::ptrdiff_t = default_stack_size);
+    static inline type* create(
+        BOOST_FWD_REF(Functor)
+      , BOOST_RV_REF(naming::id_type) target
+      , BOOST_RV_REF(naming::id_type) output_lco 
+      , BOOST_RV_REF(naming::id_type) input_lco
+      , thread_id_repr_type = 0
+      , std::ptrdiff_t = default_stack_size
+        );
 
 #if HPX_COROUTINE_ARG_MAX > 1
     result_slot_type * result() {
@@ -271,17 +284,22 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
     typedef typename util::decay<FunctorType>::type functor_type;
 
     template <typename Functor>
-    coroutine_impl_wrapper(BOOST_FWD_REF(Functor) f, BOOST_RV_REF(naming::id_type) target,
-            thread_id_repr_type id, std::ptrdiff_t stack_size)
-      : super_type(this, id, stack_size),
-        m_fun(boost::forward<Functor>(f)),
-        target_(boost::move(target))
+    coroutine_impl_wrapper(
+            BOOST_FWD_REF(Functor) f
+          , BOOST_RV_REF(naming::id_type) target
+          , BOOST_RV_REF(naming::id_type) output_lco
+          , BOOST_RV_REF(naming::id_type) input_lco
+          , thread_id_repr_type id
+          , std::ptrdiff_t stack_size
+            )
+      : super_type(this, boost::move(target),
+            boost::move(output_lco), boost::move(input_lco), id, stack_size),
+        m_fun(boost::forward<Functor>(f))
     {}
 
     ~coroutine_impl_wrapper()
     {
         BOOST_ASSERT(!m_fun);   // functor should have been reset by now
-        BOOST_ASSERT(!target_);
     }
 
     void operator()()
@@ -443,19 +461,23 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
     void reset()
     {
         this->reset_stack();
-        m_fun.clear();    // just reset the bound function
-        target_ = naming::invalid_id;
+        m_fun.clear(); // just reset the bound function
         this->super_type::reset();
     }
 
     template <typename Functor>
-    void rebind(BOOST_FWD_REF(Functor) f, BOOST_RV_REF(naming::id_type) target,
-        thread_id_repr_type id)
+    void rebind(
+        BOOST_FWD_REF(Functor) f
+      , BOOST_RV_REF(naming::id_type) target
+      , BOOST_RV_REF(naming::id_type) output_lco
+      , BOOST_RV_REF(naming::id_type) input_lco
+      , thread_id_repr_type id
+        )
     {
-        this->rebind_stack();     // count how often a coroutines object was reused
+        this->rebind_stack(); // count how often a coroutines object was reused
         m_fun = boost::forward<Functor>(f);
-        target_ = boost::move(target);
-        this->super_type::rebind(id);
+        this->super_type::rebind(boost::move(target),
+            boost::move(output_lco), boost::move(input_lco), id);
     }
 
     // the memory for the threads is managed by a lockfree caching_freelist
@@ -523,15 +545,21 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
 #endif
 
     functor_type m_fun;
-    naming::id_type target_;        // keep target alive, if needed
+    // REVIEW: Hartmut, it seems like this should probably be in context_base,
+    // as we have all the thread debugging data there.
   };
 
   template<typename CoroutineType, typename ContextImpl, template <typename> class Heap>
   template<typename Functor>
   inline typename coroutine_impl<CoroutineType, ContextImpl, Heap>::type*
-  coroutine_impl<CoroutineType, ContextImpl, Heap>::
-      create(BOOST_FWD_REF(Functor) f, BOOST_RV_REF(naming::id_type) target,
-          thread_id_repr_type id, std::ptrdiff_t stack_size)
+  coroutine_impl<CoroutineType, ContextImpl, Heap>::create(
+      BOOST_FWD_REF(Functor) f
+    , BOOST_RV_REF(naming::id_type) target
+    , BOOST_RV_REF(naming::id_type) output_lco
+    , BOOST_RV_REF(naming::id_type) input_lco
+    , thread_id_repr_type id
+    , std::ptrdiff_t stack_size
+      )
   {
       typedef typename hpx::util::decay<Functor>::type functor_type;
 
@@ -553,12 +581,24 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
       // allocate a new coroutine object, if non is available (or all heaps are locked)
       if (NULL == wrapper) {
           context_base<ContextImpl>::increment_allocation_count(heap_num);
-          return new wrapper_type(boost::forward<Functor>(f), boost::move(target),
-              id, stack_size);
+          return new wrapper_type(
+                boost::forward<Functor>(f)
+              , boost::move(target)
+              , boost::move(output_lco)
+              , boost::move(input_lco)
+              , id
+              , stack_size
+                );
       }
 
       // if we reuse an existing  object, we need to rebind its function
-      wrapper->rebind(boost::forward<Functor>(f), boost::move(target), id);
+      wrapper->rebind(
+            boost::forward<Functor>(f)
+          , boost::move(target)
+          , boost::move(output_lco)
+          , boost::move(input_lco)
+          , id
+            );
       return wrapper;
   }
 
@@ -568,6 +608,7 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
   coroutine_impl_wrapper<Functor, CoroutineType, ContextImpl, Heap>::destroy(type* p)
   {
       // always hand the stack back to the matching heap
+      // REVIEW: Why 32? 
       deallocate(p, std::size_t(p->get_thread_id())/32); //-V112
   }
 

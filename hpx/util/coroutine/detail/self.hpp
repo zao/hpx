@@ -36,6 +36,7 @@
 #include <hpx/util/coroutine/detail/fix_result.hpp>
 #include <hpx/util/coroutine/detail/coroutine_accessor.hpp>
 #include <hpx/util/function.hpp>
+#include <hpx/runtime/naming/id_type.hpp>
 
 namespace hpx { namespace util { namespace coroutines { namespace detail 
 {
@@ -207,6 +208,25 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
         return m_pimpl->set_thread_data(data);
     }
 #endif
+
+    naming::id_type const& get_output_lco() const
+    {
+        BOOST_ASSERT(m_pimpl);
+        return m_pimpl->get_output_lco();
+    }
+
+    naming::id_type const& get_input_lco() const
+    {
+        BOOST_ASSERT(m_pimpl);
+        return m_pimpl->get_input_lco();
+    }
+
+    void set_input_lco(naming::id_type const& lco) 
+    {
+        BOOST_ASSERT(m_pimpl);
+        return m_pimpl->set_input_lco(lco);
+    }
+
 
 #if defined(HPX_GENERIC_COROUTINES)
   private:

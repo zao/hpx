@@ -228,6 +228,16 @@ namespace hpx { namespace threads
     HPX_API_EXPORT std::size_t get_thread_phase(thread_id_type const& id,
         error_code& ec = throws);
 
+    HPX_API_EXPORT hpx::id_type const&
+    get_thread_target(thread_id_type const& id, error_code& ec = throws);
+    HPX_API_EXPORT hpx::id_type const&
+    get_thread_output_lco(thread_id_type const& id, error_code& ec = throws);
+    HPX_API_EXPORT hpx::id_type const&
+    get_thread_input_lco(thread_id_type const& id, error_code& ec = throws);
+
+    HPX_API_EXPORT void set_thread_input_lco(thread_id_type const& id,
+        hpx::id_type const& lco, error_code& ec = throws);
+
     ///////////////////////////////////////////////////////////////////////////
     // Return the number of the NUMA node the current thread is running on
     HPX_API_EXPORT std::size_t get_numa_node_number();
@@ -410,8 +420,18 @@ namespace hpx { namespace this_thread
     ///
     HPX_API_EXPORT threads::thread_state_ex_enum suspend(
         threads::thread_state_enum state = threads::pending,
+        hpx::id_type const& lco = hpx::invalid_id, 
         char const* description = "this_thread::suspend",
         error_code& ec = throws);
+
+    // Deprecated calling convention.
+    inline threads::thread_state_ex_enum suspend(
+        threads::thread_state_enum state, 
+        char const* description,
+        error_code& ec = throws)
+    {
+        return suspend(state, hpx::invalid_id, description, ec);
+    }
 
     /// The function \a suspend will return control to the thread manager
     /// (suspends the current thread). It sets the new state of this thread
@@ -432,8 +452,18 @@ namespace hpx { namespace this_thread
     ///
     HPX_API_EXPORT threads::thread_state_ex_enum suspend(
         boost::posix_time::ptime const&,
+        hpx::id_type const& lco = hpx::invalid_id, 
         char const* description = "this_thread::suspend",
         error_code& ec = throws);
+
+    // Deprecated calling convention.
+    inline threads::thread_state_ex_enum suspend(
+        boost::posix_time::ptime const& at_time,
+        char const* description,
+        error_code& ec = throws)
+    {
+        return suspend(at_time, hpx::invalid_id, description, ec);
+    }
 
     /// The function \a suspend will return control to the thread manager
     /// (suspends the current thread). It sets the new state of this thread
@@ -454,8 +484,17 @@ namespace hpx { namespace this_thread
     ///
     HPX_API_EXPORT threads::thread_state_ex_enum suspend(
         boost::posix_time::time_duration const&,
+        hpx::id_type const& lco = hpx::invalid_id, 
         char const* description = "this_thread::suspend",
         error_code& ec = throws);
+
+    inline threads::thread_state_ex_enum suspend(
+        boost::posix_time::time_duration const& at_time,
+        char const* description,
+        error_code& ec = throws)
+    {
+        return suspend(at_time, hpx::invalid_id, description, ec);
+    }
 
     /// The function \a suspend will return control to the thread manager
     /// (suspends the current thread). It sets the new state of this thread
@@ -475,10 +514,18 @@ namespace hpx { namespace this_thread
     ///         \a hpx#invalid_status.
     ///
     inline threads::thread_state_ex_enum suspend(
-        boost::uint64_t ms, char const* description = "this_thread::suspend",
-        error_code& ec = throws)
+        boost::uint64_t ms, hpx::id_type const& lco = hpx::invalid_id,
+        char const* description = "this_thread::suspend", error_code& ec = throws)
     {
-        return suspend(boost::posix_time::milliseconds(ms), description, ec);
+        return suspend(boost::posix_time::milliseconds(ms),
+            lco, description, ec);
+    }
+
+    inline threads::thread_state_ex_enum suspend(
+        boost::uint64_t ms, char const* description, error_code& ec = throws)
+    {
+        return suspend(boost::posix_time::milliseconds(ms),
+            hpx::invalid_id, description, ec);
     }
 }}
 
@@ -555,6 +602,33 @@ namespace hpx { namespace applier
         std::size_t os_thread = std::size_t(-1),
         threads::thread_stacksize stacksize = threads::thread_stacksize_default,
         error_code& ec = throws);
+
+    HPX_API_EXPORT threads::thread_id_type register_thread_plain(
+        BOOST_RV_REF(HPX_STD_FUNCTION<threads::thread_function_type>) func,
+        naming::id_type const& target, naming::id_type const& output_lco,
+        char const* description = 0,
+        threads::thread_state_enum initial_state = threads::pending,
+        bool run_now = true,
+        threads::thread_priority priority = threads::thread_priority_normal,
+        std::size_t os_thread = std::size_t(-1),
+        threads::thread_stacksize stacksize = threads::thread_stacksize_default,
+        error_code& ec = throws);
+
+    inline threads::thread_id_type register_thread_plain(
+        BOOST_RV_REF(HPX_STD_FUNCTION<threads::thread_function_type>) func,
+        naming::id_type const& target, 
+        char const* description = 0,
+        threads::thread_state_enum initial_state = threads::pending,
+        bool run_now = true,
+        threads::thread_priority priority = threads::thread_priority_normal,
+        std::size_t os_thread = std::size_t(-1),
+        threads::thread_stacksize stacksize = threads::thread_stacksize_default,
+        error_code& ec = throws)
+    {
+        return register_thread_plain(boost::move(func), target, hpx::invalid_id,
+            description, initial_state, run_now, priority,
+            os_thread, stacksize, ec);
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     /// \brief Create a new \a thread using the given function as the work to
@@ -695,13 +769,30 @@ namespace hpx { namespace applier
 #if !defined(DOXYGEN)
     HPX_API_EXPORT void register_work_plain(
         BOOST_RV_REF(HPX_STD_FUNCTION<threads::thread_function_type>) func,
-        naming::id_type const& target, char const* description = 0,
+        naming::id_type const& target, naming::id_type const& output_lco,
+        char const* description = 0,
         naming::address::address_type lva = 0,
         threads::thread_state_enum initial_state = threads::pending,
         threads::thread_priority priority = threads::thread_priority_normal,
         std::size_t os_thread = std::size_t(-1),
         threads::thread_stacksize stacksize = threads::thread_stacksize_default,
         error_code& ec = throws);
+
+    inline void register_work_plain(
+        BOOST_RV_REF(HPX_STD_FUNCTION<threads::thread_function_type>) func,
+        naming::id_type const& target,
+        char const* description = 0,
+        naming::address::address_type lva = 0,
+        threads::thread_state_enum initial_state = threads::pending,
+        threads::thread_priority priority = threads::thread_priority_normal,
+        std::size_t os_thread = std::size_t(-1),
+        threads::thread_stacksize stacksize = threads::thread_stacksize_default,
+        error_code& ec = throws)
+    {
+        register_work_plain(boost::move(func), target, 
+            naming::invalid_id, description, lva, initial_state, priority,
+            os_thread, stacksize, ec);
+    }
 #endif
 
     ///////////////////////////////////////////////////////////////////////////

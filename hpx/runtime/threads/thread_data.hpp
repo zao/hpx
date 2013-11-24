@@ -512,6 +512,11 @@ namespace hpx { namespace threads
         virtual std::size_t set_thread_data(std::size_t data) = 0;
 #endif
 
+        virtual hpx::id_type const& get_target() const = 0;
+        virtual hpx::id_type const& get_output_lco() const = 0;
+        virtual hpx::id_type const& get_input_lco() const = 0;
+        virtual void set_input_lco(hpx::id_type const& lco) = 0;
+
         /// This function will be called when the thread is about to be deleted
         //virtual void reset() {}
 
@@ -576,7 +581,10 @@ namespace hpx { namespace threads
         thread_data(thread_init_data& init_data, 
                pool_type& pool, thread_state_enum newstate)
           : thread_data_base(init_data, newstate),
-            coroutine_(boost::move(init_data.func), boost::move(init_data.target),
+            coroutine_(boost::move(init_data.func),
+                boost::move(init_data.target), 
+                boost::move(init_data.output_lco),
+                boost::move(init_data.input_lco),
                 this_(), init_data.stacksize),
             pool_(&pool)
         {
@@ -641,6 +649,26 @@ namespace hpx { namespace threads
 #endif
         }
 
+        hpx::id_type const& get_target() const
+        {
+            return coroutine_.get_target();
+        }
+
+        hpx::id_type const& get_output_lco() const
+        {
+            return coroutine_.get_output_lco();
+        }
+
+        hpx::id_type const& get_input_lco() const
+        {
+            return coroutine_.get_input_lco();
+        }
+
+        void set_input_lco(hpx::id_type const& lco) 
+        {
+            return coroutine_.set_input_lco(lco);
+        }
+
 #if HPX_THREAD_MAINTAIN_THREAD_DATA
         std::size_t get_thread_data() const
         {
@@ -676,7 +704,11 @@ namespace hpx { namespace threads
         stackless_thread_data(thread_init_data& init_data,
                 void* pool, thread_state_enum newstate)
           : thread_data_base(init_data, newstate),
-            coroutine_(boost::move(init_data.func), boost::move(init_data.target), this_()),
+            coroutine_(boost::move(init_data.func),
+                boost::move(init_data.target),
+                boost::move(init_data.output_lco),
+                boost::move(init_data.input_lco),
+                this_()),
             pool_(pool)
         {
             BOOST_ASSERT(init_data.stacksize == 0);
@@ -725,6 +757,26 @@ namespace hpx { namespace threads
 #else
             return coroutine_.get_thread_phase();
 #endif
+        }
+
+        hpx::id_type const& get_target() const
+        {
+            return coroutine_.get_target();
+        }
+
+        hpx::id_type const& get_output_lco() const
+        {
+            return coroutine_.get_output_lco();
+        }
+
+        hpx::id_type const& get_input_lco() const
+        {
+            return coroutine_.get_input_lco();
+        }
+
+        void set_input_lco(hpx::id_type const& lco) 
+        {
+            return coroutine_.set_input_lco(lco);
         }
 
 #if HPX_THREAD_MAINTAIN_THREAD_DATA

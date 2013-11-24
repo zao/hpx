@@ -148,6 +148,29 @@ namespace hpx { namespace applier
     }
 
     threads::thread_id_type register_thread_plain(
+        BOOST_RV_REF(HPX_STD_FUNCTION<threads::thread_function_type>) func,
+        hpx::id_type const& target, hpx::id_type const& output_lco,
+        char const* desc, threads::thread_state_enum state, bool run_now,
+        threads::thread_priority priority, std::size_t os_thread,
+        threads::thread_stacksize stacksize, error_code& ec)
+    {
+        hpx::applier::applier* app = hpx::applier::get_applier_ptr();
+        if (NULL == app)
+        {
+            HPX_THROWS_IF(ec, invalid_status,
+                "hpx::applier::register_thread_plain",
+                "global applier object is not accessible");
+            return threads::invalid_thread_id;
+        }
+
+        threads::thread_init_data data(
+            boost::move(func), desc ? desc : "<unknown>", 0, priority,
+            os_thread, threads::get_stack_size(stacksize), target, output_lco);
+        return app->get_thread_manager().
+            register_thread(data, state, run_now, ec);
+    }
+
+    threads::thread_id_type register_thread_plain(
         threads::thread_init_data& data, threads::thread_state_enum state,
         bool run_now, error_code& ec)
     {
@@ -255,7 +278,7 @@ namespace hpx { namespace applier
 
     void register_work_plain(
         BOOST_RV_REF(HPX_STD_FUNCTION<threads::thread_function_type>) func,
-        naming::id_type const& target,
+        naming::id_type const& target, naming::id_type const& output_lco,
         char const* desc, naming::address::address_type lva,
         threads::thread_state_enum state, threads::thread_priority priority,
         std::size_t os_thread, threads::thread_stacksize stacksize,
@@ -272,7 +295,7 @@ namespace hpx { namespace applier
 
         threads::thread_init_data data(boost::move(func),
             desc ? desc : "<unknown>", lva, priority, os_thread,
-            threads::get_stack_size(stacksize), target);
+            threads::get_stack_size(stacksize), target, output_lco);
         app->get_thread_manager().register_work(data, state, ec);
     }
 
@@ -493,7 +516,7 @@ namespace hpx { namespace applier
                 // action and the local-virtual address with the TM only.
                 threads::thread_init_data data;
                 tm.register_work(
-                    act->get_thread_init_data(ids[i], lva, data),
+                    act->get_thread_init_data(ids[i], hpx::invalid_id, lva, data),
                     threads::pending);
             }
             else {

@@ -17,7 +17,7 @@
 #include <hpx/util/unused.hpp>
 #include <hpx/util/scoped_unlock.hpp>
 #include <hpx/util/detail/value_or_error.hpp>
-
+#include <hpx/util/logging.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_same.hpp>
@@ -283,10 +283,35 @@ namespace detail
         lcos::make_error_future<Result>(boost::exception_ptr const& e);
 
     protected:
-        future_data() {}
+        // Craft a fake, LVA encoded GID.
+        hpx::id_type make_fake_id(hpx::id_type const& id)
+        {
+            if (LHPX_ENABLED(info) && (id == hpx::invalid_id))
+            {
+                boost::uint64_t msb =
+                    naming::replace_locality_id(0ull, hpx::get_locality_id());
+                boost::uint64_t lsb = reinterpret_cast<boost::uint64_t>(this);
 
-        future_data(completed_callback_type const& data_sink)
-          : on_completed_(data_sink) {}
+                return hpx::id_type(hpx::naming::gid_type(msb, lsb),
+                    hpx::id_type::unmanaged);
+            }
+
+            return id;
+        }
+
+        future_data(hpx::id_type const& id = hpx::invalid_id)
+          : data_(make_fake_id(id))
+        {}
+
+        future_data(completed_callback_type const& data_sink,
+                hpx::id_type const& id = hpx::invalid_id)
+          : data_(make_fake_id(id)), on_completed_(data_sink)
+        {}
+
+        void set_lco_id(hpx::id_type const& lco_id)
+        {
+            data_.set_lco_id(lco_id);
+        }
 
     public:
         static result_type handle_error(data_type const& d, error_code &ec)
@@ -387,7 +412,7 @@ namespace detail
 
             // set the received result, reset error status
             try {
-               typedef typename util::decay<T>::type naked_type;
+                typedef typename util::decay<T>::type naked_type;
 
                 typedef traits::get_remote_result<
                     result_type, naked_type

@@ -74,7 +74,10 @@ namespace hpx { namespace util { namespace coroutines
 
         template <typename Functor>
         stackless_coroutine(BOOST_FWD_REF(Functor) f,
-                BOOST_RV_REF(naming::id_type) target, thread_id_repr_type id = 0)
+                BOOST_RV_REF(naming::id_type) target,
+                BOOST_RV_REF(naming::id_type) output_lco,
+                BOOST_RV_REF(naming::id_type) input_lco,
+                thread_id_repr_type id = 0)
           : f_(boost::forward<Functor>(f))
           , state_(ctx_ready)
           , id_(id)
@@ -85,6 +88,8 @@ namespace hpx { namespace util { namespace coroutines
           , thread_data_(0)
 #endif
           , target_(boost::move(target))
+          , output_lco_(boost::move(output_lco))
+          , input_lco_(boost::move(input_lco))
         {}
 
         stackless_coroutine(BOOST_RV_REF(stackless_coroutine) rhs)
@@ -97,7 +102,9 @@ namespace hpx { namespace util { namespace coroutines
 #if HPX_THREAD_MAINTAIN_THREAD_DATA
           , thread_data_(rhs.thread_data_)
 #endif
-          , target_(boost::move(rhs.target_))
+          , target_(boost::move(rhs.output_lco_))
+          , output_lco_(boost::move(rhs.output_lco_))
+          , input_lco_(boost::move(rhs.input_lco_))
         {
             rhs.id_ = 0;
             rhs.state_ = ctx_ready;
@@ -127,6 +134,8 @@ namespace hpx { namespace util { namespace coroutines
             std::swap(thread_data_, rhs.thread_data_);
 #endif
             std::swap(target_, rhs.target_);
+            std::swap(output_lco_, rhs.output_lco_);
+            std::swap(input_lco_, rhs.input_lco_);
             return *this;
         }
 
@@ -159,10 +168,34 @@ namespace hpx { namespace util { namespace coroutines
             return t;
         }
 #endif
+        naming::id_type const& get_target() const
+        {
+            return target_;
+        }
+
+        naming::id_type const& get_output_lco() const
+        {
+            return output_lco_;
+        }
+
+        naming::id_type const& get_input_lco() const
+        {
+            return input_lco_;
+        }
+
+        void set_input_lco(naming::id_type const& lco) 
+        {
+            input_lco_ = lco;
+        }
 
         template <typename Functor>
-        void rebind(BOOST_FWD_REF(Functor) f, BOOST_RV_REF(naming::id_type) target,
-            thread_id_repr_type id = 0)
+        void rebind(
+            BOOST_FWD_REF(Functor) f
+          , BOOST_RV_REF(naming::id_type) target
+          , BOOST_RV_REF(naming::id_type) output_lco
+          , BOOST_RV_REF(naming::id_type) input_lco
+          , thread_id_repr_type id = 0
+            )
         {
             BOOST_ASSERT(exited());
 
@@ -171,13 +204,17 @@ namespace hpx { namespace util { namespace coroutines
 #if HPX_THREAD_MAINTAIN_PHASE_INFORMATION
             phase_ = 0;
 #endif
-            target_ = boost::move(target);
+            target_     = boost::move(target_);
+            output_lco_ = boost::move(output_lco);
+            input_lco_  = boost::move(input_lco);
         }
 
         void reset()
         {
             BOOST_ASSERT(exited());
-            target_ = naming::invalid_id;
+            target_     = naming::invalid_id;
+            output_lco_ = naming::invalid_id;
+            input_lco_  = naming::invalid_id;
             util::detail::reset_function(f_);
         }
 
@@ -251,7 +288,9 @@ namespace hpx { namespace util { namespace coroutines
         std::size_t thread_data_;
 #endif
 
-        naming::id_type target_;        // keep target alive, if needed
+        naming::id_type target_; // keep target LCO alive alive, if needed
+        naming::id_type output_lco_; 
+        naming::id_type input_lco_;
     };
 }}}
 #endif

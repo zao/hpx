@@ -133,15 +133,16 @@ namespace hpx { namespace lcos { namespace detail
         }
 
     public:
-        full_empty_entry()
-          : data_(), state_(empty)
+        full_empty_entry(hpx::id_type const& lco_id = hpx::invalid_id)
+          : data_(), state_(empty), lco_id_(lco_id)
         {
             ++full_empty_counter_data_.constructed_;
         }
 
         template <typename T0>
-        explicit full_empty_entry(BOOST_FWD_REF(T0) t0)
-          : data_(boost::forward<T0>(t0)), state_(empty)
+        explicit full_empty_entry(BOOST_FWD_REF(T0) t0,
+                hpx::id_type const& lco_id = hpx::invalid_id)
+          : data_(boost::forward<T0>(t0)), state_(empty), lco_id_(lco_id) 
         {
             ++full_empty_counter_data_.constructed_;
         }
@@ -156,6 +157,11 @@ namespace hpx { namespace lcos { namespace detail
             }
 
             ++full_empty_counter_data_.destructed_;
+        }
+
+        void set_lco_id(naming::id_type const& lco_id)
+        {
+            lco_id_ = lco_id;
         }
 
         // returns whether this entry is currently empty
@@ -212,7 +218,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<typename mutex_type::scoped_lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_full", ec);
                     if (ec) return;
                 }
 
@@ -248,7 +254,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<typename mutex_type::scoped_lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_full", ec);
                     if (ec) return;
                 }
 
@@ -282,7 +288,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<typename mutex_type::scoped_lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_full", ec);
                     if (ec) return;
                 }
 
@@ -324,7 +330,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<typename mutex_type::scoped_lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_empty", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_empty", ec);
                     if (ec) return;
                 }
             }
@@ -359,7 +365,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<typename mutex_type::scoped_lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_empty", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_empty", ec);
                     if (ec) return;
                 }
             }
@@ -393,7 +399,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<typename mutex_type::scoped_lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_if_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_if_full", ec);
                     if (ec) return;
                 }
             }
@@ -429,7 +435,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<typename mutex_type::scoped_lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_if_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_if_full", ec);
                     if (ec) return;
                 }
             }
@@ -543,6 +549,7 @@ namespace hpx { namespace lcos { namespace detail
         queue_type read_queue_;               // threads waiting in read
         value_type data_;                     // protected data
         full_empty_state state_;              // current full/empty state
+        naming::id_type lco_id_;              // GID of the LCO
     };
 
     ///////////////////////////////////////////////////////////////////////////
@@ -622,17 +629,22 @@ namespace hpx { namespace lcos { namespace detail
         }
 
     public:
-        full_empty_entry()
-          : data_(), state_(empty)
+        full_empty_entry(hpx::id_type const& lco_id = hpx::invalid_id)
+          : data_(), state_(empty), lco_id_(lco_id)
         {
             ++full_empty_counter_data_.constructed_;
         }
 
         template <typename T0>
-        explicit full_empty_entry(BOOST_FWD_REF(T0) t0)
-          : data_(boost::forward<T0>(t0)), state_(empty)
+        explicit full_empty_entry(hpx::id_type const& lco_id, BOOST_FWD_REF(T0) t0)
+          : data_(boost::forward<T0>(t0)), state_(empty), lco_id_(lco_id) 
         {
             ++full_empty_counter_data_.constructed_;
+        }
+
+        void set_lco_id(naming::id_type const& lco_id)
+        {
+            lco_id_ = lco_id;
         }
 
         ~full_empty_entry()
@@ -695,7 +707,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<Lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_full", ec);
                     if (ec) return;
                 }
 
@@ -730,7 +742,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<Lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_full", ec);
                     if (ec) return;
                 }
 
@@ -762,7 +774,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<Lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_full", ec);
                     if (ec) return;
                 }
 
@@ -803,7 +815,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<Lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_empty", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_empty", ec);
                     if (ec) return;
                 }
             }
@@ -837,7 +849,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<Lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_full_empty", ec);
+                        lco_id_, "full_empty_entry::enqueue_full_empty", ec);
                     if (ec) return;
                 }
             }
@@ -869,7 +881,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<Lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_if_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_if_full", ec);
                     if (ec) return;
                 }
             }
@@ -904,7 +916,7 @@ namespace hpx { namespace lcos { namespace detail
                     // yield this thread
                     util::scoped_unlock<Lock> ul(l);
                     this_thread::suspend(threads::suspended,
-                        "full_empty_entry::enqueue_if_full", ec);
+                        lco_id_, "full_empty_entry::enqueue_if_full", ec);
                     if (ec) return;
                 }
             }
@@ -1012,6 +1024,7 @@ namespace hpx { namespace lcos { namespace detail
         queue_type read_queue_;               // threads waiting in read
         value_type data_;                     // protected data
         full_empty_state state_;              // current full/empty state
+        naming::id_type lco_id_;              // GID of the LCO
     };
 }}}
 

@@ -318,6 +318,13 @@ namespace hpx { namespace threads
         ///                 value will be ~0.
         std::size_t get_phase(thread_id_type const& id);
 
+        hpx::id_type const& get_target(thread_id_type const& id);
+        hpx::id_type const& get_output_lco(thread_id_type const& id);
+        hpx::id_type const& get_input_lco(thread_id_type const& id);
+
+        void set_input_lco(thread_id_type const& id,
+            hpx::id_type const& lco);
+
         /// The get_priority function is part of the thread related API. It
         /// queries the priority of one of the threads known to the thread manager
         ///

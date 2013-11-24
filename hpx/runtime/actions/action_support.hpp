@@ -277,11 +277,14 @@ namespace hpx { namespace actions
         /// Return all data needed for thread initialization
         virtual threads::thread_init_data&
         get_thread_init_data(naming::id_type const& target,
-            naming::address::address_type lva, threads::thread_init_data& data) = 0;
+            naming::id_type const& output_lco, 
+            naming::address::address_type lva,
+            threads::thread_init_data& data) = 0;
 
         virtual threads::thread_init_data&
         get_thread_init_data(continuation_type& cont,
-            naming::id_type const& target, naming::address::address_type lva,
+            naming::id_type const& target,
+            naming::address::address_type lva,
             threads::thread_init_data& data) = 0;
 
         /// Return a pointer to the filter to be used while serializing an
@@ -564,7 +567,9 @@ namespace hpx { namespace actions
         /// Return all data needed for thread initialization
         threads::thread_init_data&
         get_thread_init_data(naming::id_type const& target,
-            naming::address::address_type lva, threads::thread_init_data& data)
+            naming::id_type const& output_lco,
+            naming::address::address_type lva,
+            threads::thread_init_data& data)
         {
             data.func = get_thread_function(lva);
 #if HPX_THREAD_MAINTAIN_TARGET_ADDRESS
@@ -580,13 +585,16 @@ namespace hpx { namespace actions
             data.priority = priority_;
             data.stacksize = threads::get_stack_size(stacksize_);
 
-            data.target = target;
+            data.target     = target;
+            data.output_lco = output_lco;
             return data;
         }
 
         threads::thread_init_data&
-        get_thread_init_data(continuation_type& cont, naming::id_type const& target,
-            naming::address::address_type lva, threads::thread_init_data& data)
+        get_thread_init_data(continuation_type& cont,
+            naming::id_type const& target,
+            naming::address::address_type lva,
+            threads::thread_init_data& data)
         {
             data.func = get_thread_function(cont, lva);
 #if HPX_THREAD_MAINTAIN_TARGET_ADDRESS
@@ -602,7 +610,8 @@ namespace hpx { namespace actions
             data.priority = priority_;
             data.stacksize = threads::get_stack_size(stacksize_);
 
-            data.target = target;
+            data.target     = target;
+            data.output_lco = cont->get_gid();
             return data;
         }
 

@@ -407,6 +407,11 @@ namespace hpx { namespace lcos
         typename detail::unwrapped_future_result<Result>::type
         unwrap(error_code& ec = throws);
 
+        naming::id_type const& make_fake_id() const
+        {
+            return make_fake_id();
+        }
+
     private:
         template <typename InnerResult, typename UnwrapResult>
         void on_inner_ready(future<InnerResult>& inner,
@@ -713,6 +718,11 @@ namespace hpx { namespace lcos
         wait_for(boost::chrono::duration<Rep, Period> const& rel_time)
         {
             return wait_for(util::to_time_duration(rel_time));
+        }
+
+        naming::id_type const& make_fake_id() const
+        {
+            return make_fake_id();
         }
 
     protected:

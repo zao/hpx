@@ -53,6 +53,8 @@ namespace hpx { namespace threads
             num_os_thread(rhs.num_os_thread),
             stacksize(rhs.stacksize),
             target(boost::move(rhs.target)),
+            output_lco(boost::move(rhs.output_lco)),
+            input_lco(boost::move(rhs.input_lco)),
             scheduler_base(rhs.scheduler_base)
         {}
 
@@ -63,6 +65,8 @@ namespace hpx { namespace threads
                 std::size_t os_thread = std::size_t(-1),
                 std::ptrdiff_t stacksize_ = std::ptrdiff_t(-1),
                 naming::id_type const& target_ = naming::invalid_id,
+                naming::id_type const& output_lco_ = naming::invalid_id,
+                naming::id_type const& input_lco_ = naming::invalid_id,
                 policies::scheduler_base* scheduler_base_ = 0)
           : func(boost::forward<F>(f)),
 #if HPX_THREAD_MAINTAIN_TARGET_ADDRESS
@@ -78,6 +82,8 @@ namespace hpx { namespace threads
             stacksize(stacksize_ == std::ptrdiff_t(-1) ?
                 get_default_stack_size() : stacksize_),
             target(target_),
+            output_lco(output_lco_),
+            input_lco(input_lco_),
             scheduler_base(scheduler_base_)
         {}
 
@@ -100,6 +106,8 @@ namespace hpx { namespace threads
         std::ptrdiff_t stacksize;
 
         naming::id_type target;
+        naming::id_type output_lco;
+        naming::id_type input_lco;
 
         policies::scheduler_base* scheduler_base;
 

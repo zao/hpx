@@ -244,6 +244,35 @@ namespace hpx { namespace threads
         return thrd ? thrd->get_thread_phase() : std::size_t(~0);
     }
 
+    template <typename SchedulingPolicy, typename NotificationPolicy>
+    hpx::id_type const& threadmanager_impl<SchedulingPolicy, NotificationPolicy>::
+        get_target(thread_id_type const& thrd)
+    {
+        return thrd ? thrd->get_target() : hpx::invalid_id;
+    }
+
+    template <typename SchedulingPolicy, typename NotificationPolicy>
+    hpx::id_type const& threadmanager_impl<SchedulingPolicy, NotificationPolicy>::
+        get_output_lco(thread_id_type const& thrd)
+    {
+        return thrd ? thrd->get_output_lco() : hpx::invalid_id;
+    }
+
+    template <typename SchedulingPolicy, typename NotificationPolicy>
+    hpx::id_type const& threadmanager_impl<SchedulingPolicy, NotificationPolicy>::
+        get_input_lco(thread_id_type const& thrd)
+    {
+        return thrd ? thrd->get_input_lco() : hpx::invalid_id;
+    }
+
+    template <typename SchedulingPolicy, typename NotificationPolicy>
+    void threadmanager_impl<SchedulingPolicy, NotificationPolicy>::
+        set_input_lco(thread_id_type const& thrd, hpx::id_type const& lco)
+    {
+        if (thrd)
+            thrd->set_input_lco(lco);
+    }
+
     /// The get_priority function is part of the thread related API. It
     /// queries the priority of one of the threads known to the threadmanager_impl
     template <typename SchedulingPolicy, typename NotificationPolicy>

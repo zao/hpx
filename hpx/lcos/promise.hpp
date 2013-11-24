@@ -293,6 +293,7 @@ namespace hpx { namespace lcos { namespace detail
             BOOST_ASSERT(bp);
             BOOST_ASSERT(this->gid_ == naming::invalid_gid);
             this->gid_ = bp->get_base_gid();
+            this->set_lco_id(bp->get_gid());
         }
     };
 
@@ -400,8 +401,9 @@ namespace hpx { namespace lcos { namespace detail
         void set_back_ptr(components::managed_component<promise>* bp)
         {
             BOOST_ASSERT(bp);
-            BOOST_ASSERT(gid_ == naming::invalid_gid);
+            BOOST_ASSERT(this->gid_ == naming::invalid_gid);
             this->gid_ = bp->get_base_gid();
+            this->set_lco_id(bp->get_gid());
         }
     };
 }}}

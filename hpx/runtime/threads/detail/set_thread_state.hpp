@@ -42,6 +42,7 @@ namespace hpx { namespace threads { namespace detail
         // in the mean time
         thread_state current_state = thrd->get_state();
 
+        // REVIEW: I don't trust this.
         if (thread_state_enum(current_state) == thread_state_enum(previous_state) &&
             current_state != previous_state)
         {
@@ -110,8 +111,6 @@ namespace hpx { namespace threads { namespace detail
                 return thread_state(new_state);
             }
 
-            // the thread to set the state for is currently running, so we
-            // schedule another thread to execute the pending set_state
             switch (previous_state_val) {
             case active:
                 {
@@ -122,6 +121,8 @@ namespace hpx { namespace threads { namespace detail
                         << thrd->get_description() << "), new state("
                         << get_thread_state_name(new_state) << ")";
 
+                    // the thread to set the state for is currently running, so we
+                    // schedule another thread to execute the pending set_state
                     thread_init_data data(
                         boost::bind(&set_active_state,
                             thrd, new_state, new_state_ex,
@@ -184,11 +185,32 @@ namespace hpx { namespace threads { namespace detail
             // at some point will ignore this thread by simply skipping it
             // (if it's not pending anymore).
 
-            LTM_(info) << "set_thread_state: thread(" << thrd.get() << "), "
-                          "description(" << thrd->get_description() << "), "
-                          "new state(" << get_thread_state_name(new_state) << "), "
-                          "old state(" << get_thread_state_name(previous_state_val)
-                       << ")";
+            if (LHPX_ENABLED(info)) 
+            {
+                if (new_state == threads::suspended)
+                {
+                    LTM_(info)
+                        << "set_thread_state: thread(" << thrd.get()
+                        << "), description(" << thrd->get_description()
+                        << "), new_state(" << get_thread_state_name(new_state)
+                        << "), old_state("
+                        << get_thread_state_name(previous_state_val) 
+                        << "), input_lcos(" << thrd->get_input_lco()
+                        << "), output_lcos(" << thrd->get_output_lco()
+                        << ")";
+                }
+
+                else
+                {
+                    LTM_(info)
+                        << "set_thread_state: thread(" << thrd.get()
+                        << "), description(" << thrd->get_description()
+                        << "), new_state(" << get_thread_state_name(new_state)
+                        << "), old_state("
+                        << get_thread_state_name(previous_state_val) 
+                        << ")";
+                }
+            }
 
             // So all what we do here is to set the new state.
             if (thrd->restore_state(new_state, previous_state)) {

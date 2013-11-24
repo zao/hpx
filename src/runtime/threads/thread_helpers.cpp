@@ -118,6 +118,78 @@ namespace hpx { namespace threads
         return app->get_thread_manager().get_phase(id);
     }
 
+    hpx::id_type const& get_thread_target(thread_id_type const& id,
+        error_code& ec)
+    {
+        hpx::applier::applier* app = hpx::applier::get_applier_ptr();
+        if (NULL == app)
+        {
+            HPX_THROWS_IF(ec, invalid_status,
+                "hpx::threads::get_thread_target",
+                "global applier object is not accessible");
+            return hpx::invalid_id;
+        }
+
+        if (&ec != &throws)
+            ec = make_success_code();
+
+        return app->get_thread_manager().get_target(id);
+    }
+
+    hpx::id_type const& get_thread_output_lco(thread_id_type const& id,
+        error_code& ec)
+    {
+        hpx::applier::applier* app = hpx::applier::get_applier_ptr();
+        if (NULL == app)
+        {
+            HPX_THROWS_IF(ec, invalid_status,
+                "hpx::threads::get_thread_output_lco",
+                "global applier object is not accessible");
+            return hpx::invalid_id;
+        }
+
+        if (&ec != &throws)
+            ec = make_success_code();
+
+        return app->get_thread_manager().get_output_lco(id);
+    }
+
+    hpx::id_type const& get_thread_input_lco(thread_id_type const& id,
+        error_code& ec)
+    {
+        hpx::applier::applier* app = hpx::applier::get_applier_ptr();
+        if (NULL == app)
+        {
+            HPX_THROWS_IF(ec, invalid_status,
+                "hpx::threads::get_thread_input_lco",
+                "global applier object is not accessible");
+            return hpx::invalid_id;
+        }
+
+        if (&ec != &throws)
+            ec = make_success_code();
+
+        return app->get_thread_manager().get_input_lco(id);
+    }
+
+    void set_thread_input_lco(thread_id_type const& id,
+        hpx::id_type const& lco, error_code& ec)
+    {
+        hpx::applier::applier* app = hpx::applier::get_applier_ptr();
+        if (NULL == app)
+        {
+            HPX_THROWS_IF(ec, invalid_status,
+                "hpx::threads::set_thread_input_lco",
+                "global applier object is not accessible");
+            return;
+        }
+
+        if (&ec != &throws)
+            ec = make_success_code();
+
+        app->get_thread_manager().set_input_lco(id, lco);
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     threads::thread_priority get_thread_priority(thread_id_type const& id, error_code& ec)
     {
@@ -450,6 +522,33 @@ namespace hpx { namespace this_thread
 #endif
     }
 
+    void log_suspended(threads::thread_id_type const& thrd)
+    {
+        if (LHPX_ENABLED(info))
+        {
+            hpx::naming::gid_type target = hpx::naming::invalid_gid;
+            hpx::naming::gid_type input  = hpx::naming::invalid_gid;
+            hpx::naming::gid_type output = hpx::naming::invalid_gid;
+
+            if (thrd->get_target())
+                input = thrd->get_target().get_gid();
+
+            if (thrd->get_input_lco())
+                input = thrd->get_input_lco().get_gid();
+ 
+            if (thrd->get_output_lco())
+                output = thrd->get_output_lco().get_gid();
+
+            LTM_(info)
+                << "suspend: thread(" << thrd.get()
+                << "), description(" << thrd->get_description()
+                << "), target(" << output
+                << "), input_lcos(" << input
+                << "), output_lcos(" << output
+                << ")";
+        }
+    }
+
     /// The function \a suspend will return control to the thread manager
     /// (suspends the current thread). It sets the new state of this thread
     /// to the thread state passed as the parameter.
@@ -457,7 +556,7 @@ namespace hpx { namespace this_thread
     /// If the suspension was aborted, this function will throw a
     /// \a yield_aborted exception.
     threads::thread_state_ex_enum suspend(threads::thread_state_enum state,
-        char const* description, error_code& ec)
+        hpx::id_type const& lco, char const* description, error_code& ec)
     {
         // handle interruption, if needed
         this_thread::interruption_point();
@@ -479,6 +578,8 @@ namespace hpx { namespace this_thread
 #endif
 
             // suspend the HPX-thread
+            self.set_input_lco(lco);
+            log_suspended(id);
             statex = self.yield(state);
         }
 
@@ -502,7 +603,7 @@ namespace hpx { namespace this_thread
     }
 
     threads::thread_state_ex_enum suspend(boost::posix_time::ptime const& at_time,
-        char const* description, error_code& ec)
+        hpx::id_type const& lco, char const* description, error_code& ec)
     {
         // handle interruption, if needed
         this_thread::interruption_point();
@@ -530,6 +631,8 @@ namespace hpx { namespace this_thread
             if (ec) return threads::wait_unknown;
 
             // suspend the HPX-thread
+            self.set_input_lco(lco);
+            log_suspended(id);
             statex = self.yield(threads::suspended);
         }
 
@@ -554,7 +657,7 @@ namespace hpx { namespace this_thread
 
     threads::thread_state_ex_enum suspend(
         boost::posix_time::time_duration const& after_duration,
-        char const* description, error_code& ec)
+        hpx::id_type const& lco, char const* description, error_code& ec)
     {
         // handle interruption, if needed
         this_thread::interruption_point();
@@ -582,6 +685,8 @@ namespace hpx { namespace this_thread
             if (ec) return threads::wait_unknown;
 
             // suspend the HPX-thread
+            self.set_input_lco(lco);
+            log_suspended(id);
             statex = self.yield(threads::suspended);
         }
 

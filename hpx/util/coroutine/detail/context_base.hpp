@@ -53,6 +53,7 @@
 
 #include <hpx/util/coroutine/detail/swap_context.hpp> //for swap hints
 #include <hpx/util/coroutine/exception.hpp>
+#include <hpx/runtime/naming/id_type.hpp>
 
 #define HPX_THREAD_MAINTAIN_OPERATIONS_COUNT  0
 
@@ -96,7 +97,14 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
     typedef void* thread_id_repr_type;
 
     template <typename Derived>
-    context_base(Derived& derived, std::ptrdiff_t stack_size, thread_id_repr_type id)
+    context_base(
+            Derived& derived
+          , BOOST_RV_REF(naming::id_type) target 
+          , BOOST_RV_REF(naming::id_type) output_lco 
+          , BOOST_RV_REF(naming::id_type) input_lco
+          , thread_id_repr_type id
+          , std::ptrdiff_t stack_size
+            )
       : context_impl(derived, stack_size),
         m_caller(),
 #if HPX_COROUTINE_IS_REFERENCE_COUNTED
@@ -117,6 +125,9 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
         m_thread_data(0),
 #endif
         m_type_info(),
+        m_target(target),
+        m_output_lco(output_lco),
+        m_input_lco(input_lco),
         m_thread_id(id)
     {}
 
@@ -177,6 +188,9 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
 #if HPX_THREAD_MAINTAIN_THREAD_DATA
       m_thread_data = 0;
 #endif
+      m_target     = naming::invalid_id;
+      m_output_lco = naming::invalid_id;
+      m_input_lco  = naming::invalid_id;
     }
 
 #if HPX_THREAD_MAINTAIN_OPERATIONS_COUNT
@@ -440,6 +454,7 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
     // Nothrow.
     ~context_base() throw()
     {
+      BOOST_ASSERT(!m_target);
       BOOST_ASSERT(!running());
       try {
         if(!exited())
@@ -464,6 +479,26 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
         return t;
     }
 #endif
+
+    naming::id_type const& get_target() const
+    {
+        return m_target; 
+    }
+
+    naming::id_type const& get_output_lco() const
+    {
+        return m_output_lco; 
+    }
+
+    naming::id_type const& get_input_lco() const
+    {
+        return m_input_lco; 
+    }
+
+    void set_input_lco(naming::id_type const& lco) 
+    {
+        m_input_lco = lco;
+    }
 
     static boost::uint64_t get_allocation_count_all(bool reset)
     {
@@ -513,7 +548,12 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
       ctx_exited_abnormally // process exited uncleanly.
     };
 
-    void rebind(thread_id_repr_type id)
+    void rebind(
+        BOOST_RV_REF(naming::id_type) target
+      , BOOST_RV_REF(naming::id_type) output_lco
+      , BOOST_RV_REF(naming::id_type) input_lco
+      , thread_id_repr_type id
+        )
     {
 #if HPX_THREAD_MAINTAIN_OPERATIONS_COUNT
       BOOST_ASSERT(exited() && 0 == m_wait_counter && !pending());
@@ -536,6 +576,9 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
 #else
       m_type_info.reset();
 #endif
+      m_target     = boost::move(target);
+      m_output_lco = boost::move(output_lco);
+      m_input_lco  = boost::move(input_lco);
     }
 
     // Cause the coroutine to exit if
@@ -608,6 +651,9 @@ namespace hpx { namespace util { namespace coroutines { namespace detail
 
     // This is used to generate a meaningful exception trace.
     boost::exception_ptr m_type_info;
+    naming::id_type m_target;
+    naming::id_type m_output_lco;
+    naming::id_type m_input_lco;
     thread_id_repr_type m_thread_id;
   };
 

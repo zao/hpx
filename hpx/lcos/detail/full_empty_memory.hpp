@@ -62,17 +62,22 @@ namespace hpx { namespace lcos { namespace detail
 
     public:
         /// \brief Create a new full/empty storage in empty state
-        full_empty()
+        full_empty(hpx::id_type const& lco_id = hpx::invalid_id)
         {}
 
         template <typename T0>
-        full_empty(BOOST_FWD_REF(T0) t0)
-          : data_(boost::forward<T0>(t0))
+        full_empty(hpx::id_type const& lco_id, BOOST_FWD_REF(T0) t0)
+          : data_(lco_id, boost::forward<T0>(t0))
         {}
 
         /// \brief Destruct the full/empty data item
         ~full_empty()
         {}
+
+        void set_lco_id(hpx::id_type const& lco_id)
+        {
+            data_.set_lco_id(lco_id);
+        }
 
         /// \brief Atomically set the state to empty without releasing any
         ///        waiting \a threads. This function is mainly usable for
@@ -218,13 +223,18 @@ namespace hpx { namespace lcos { namespace detail
 
     public:
         /// \brief Create a new full/empty storage in empty state
-        full_empty()
+        full_empty(hpx::id_type const& lco_id = hpx::invalid_id)
         {}
 
         template <typename T0>
-        full_empty(BOOST_FWD_REF(T0) t0)
-          : data_(boost::forward<T0>(t0))
+        full_empty(hpx::id_type const& lco_id, BOOST_FWD_REF(T0) t0)
+          : data_(lco_id, boost::forward<T0>(t0))
         {}
+
+        void set_lco_id(hpx::id_type const& lco_id)
+        {
+            data_.set_lco_id(lco_id);
+        }
 
         /// \brief Destruct the full/empty data item
         ~full_empty()

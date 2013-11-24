@@ -141,10 +141,22 @@ namespace hpx { namespace util { namespace coroutines
     coroutine() : m_pimpl(0) {}
 
     template <typename Functor>
-    coroutine (BOOST_FWD_REF(Functor) f, BOOST_RV_REF(naming::id_type) target,
-            thread_id_repr_type id = 0, std::ptrdiff_t stack_size = detail::default_stack_size)
-      : m_pimpl(impl_type::create(boost::forward<Functor>(f),
-            boost::move(target), id, stack_size))
+    coroutine(
+        BOOST_FWD_REF(Functor) f
+      , BOOST_RV_REF(naming::id_type) target
+      , BOOST_RV_REF(naming::id_type) output_lco
+      , BOOST_RV_REF(naming::id_type) input_lco
+      , thread_id_repr_type id = 0
+      , std::ptrdiff_t stack_size = detail::default_stack_size
+        )
+      : m_pimpl(impl_type::create(
+            boost::forward<Functor>(f)
+          , boost::move(target)
+          , boost::move(output_lco)
+          , boost::move(input_lco)
+          , id
+          , stack_size
+        ))
     {
         BOOST_ASSERT(m_pimpl->is_ready());
     }
@@ -198,6 +210,27 @@ namespace hpx { namespace util { namespace coroutines
         return m_pimpl.get() ? m_pimpl->set_thread_data(data) : 0;
     }
 #endif
+
+    naming::id_type const& get_target() const
+    {
+        return m_pimpl.get() ? m_pimpl->get_target() : naming::invalid_id;
+    }
+
+    naming::id_type const& get_output_lco() const
+    {
+        return m_pimpl.get() ? m_pimpl->get_output_lco() : naming::invalid_id;
+    }
+
+    naming::id_type const& get_input_lco() const
+    {
+        return m_pimpl.get() ? m_pimpl->get_input_lco() : naming::invalid_id;
+    }
+
+    void set_input_lco(naming::id_type const& lco) 
+    {
+        if (m_pimpl.get())
+            m_pimpl->set_input_lco(lco); 
+    }
 
     //template <typename Functor>
     //void rebind(Functor f, thread_id_repr_type id = 0)
