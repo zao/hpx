@@ -44,8 +44,9 @@ namespace hpx { namespace applier { namespace detail
             hpx::applier::register_work_plain(
                 boost::move(Action::construct_thread_function(
                     lva, boost::forward<Arguments>(args))),
-                target, actions::detail::get_action_name<Action>(), lva,
-                threads::pending, fix_priority<Action>(priority), std::size_t(-1),
+                target, actions::detail::get_action_name<Action>(),
+                lva, threads::pending, fix_priority<Action>(priority),
+                std::size_t(-1),
                 static_cast<threads::thread_stacksize>(
                     traits::action_stacksize<Action>::value));
         }
@@ -59,8 +60,9 @@ namespace hpx { namespace applier { namespace detail
             hpx::applier::register_work_plain(
                 boost::move(Action::construct_thread_function(c, lva,
                     boost::forward<Arguments>(args))),
-                target, actions::detail::get_action_name<Action>(), lva,
-                threads::pending, fix_priority<Action>(priority), std::size_t(-1),
+                target, c->get_gid(), actions::detail::get_action_name<Action>(),
+                lva, threads::pending, fix_priority<Action>(priority),
+                std::size_t(-1),
                 static_cast<threads::thread_stacksize>(
                     traits::action_stacksize<Action>::value));
         }

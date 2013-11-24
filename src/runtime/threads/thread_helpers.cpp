@@ -542,7 +542,7 @@ namespace hpx { namespace this_thread
             LTM_(info)
                 << "suspend: thread(" << thrd.get()
                 << "), description(" << thrd->get_description()
-                << "), target(" << output
+                << "), target(" << target
                 << "), input_lcos(" << input
                 << "), output_lcos(" << output
                 << ")";
