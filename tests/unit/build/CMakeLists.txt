@@ -97,7 +97,7 @@ create_cmake_test(
 )
 
 find_package(PkgConfig)
-if(PKGCONFIG_FOUND AND NOT MSVC)
+if(PKGCONFIG_FOUND AND NOT MSVC AND NOT "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
   create_pkgconfig_test(
     pkgconfig_build_dir_test
     "${CMAKE_BINARY_DIR}/lib/pkgconfig")
@@ -113,7 +113,7 @@ set(tests
 
 set(build_systems cmake)
 if(NOT CMAKE_TOOLCHAIN_FILE)
-  set(build_systems ${build_sytems} pkgconfig)
+  set(build_systems ${build_systems} pkgconfig)
 endif()
 
 foreach(system ${build_systems})
