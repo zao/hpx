@@ -1000,7 +1000,7 @@ else()
   endif()
 
   # Check if our libraries have unresolved symbols
-  if(NOT APPLE)
+  if(NOT APPLE AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
     hpx_add_link_flag_if_available(-Wl,-z,defs TARGETS SHARED EXE)
   endif()
 
