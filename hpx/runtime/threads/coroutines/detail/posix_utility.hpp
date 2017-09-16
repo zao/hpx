@@ -59,7 +59,7 @@
 #include <stdexcept>
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 #include <sys/param.h>
 #define EXEC_PAGESIZE PAGE_SIZE
 #endif
@@ -87,7 +87,7 @@ namespace posix
             PROT_EXEC | PROT_READ | PROT_WRITE,
 #if defined(__APPLE__)
             MAP_PRIVATE | MAP_ANON | MAP_NORESERVE,
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
             MAP_PRIVATE | MAP_ANON,
 #else
             MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE,

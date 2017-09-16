@@ -30,7 +30,7 @@
 #    define HPX_NATIVE_TLS __thread
 #  elif defined(HPX_WINDOWS)
 #    define HPX_NATIVE_TLS __declspec(thread)
-#  elif defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__))
+#  elif defined(__FreeBSD__) || (defined(__APPLE__) && defined(__MACH__)) || defined(__DragonFly__)
 #    define HPX_NATIVE_TLS __thread
 #  else
 #    error Unsupported platform.

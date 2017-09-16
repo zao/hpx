@@ -137,7 +137,7 @@ namespace hpx { namespace util
         std::ptrdiff_t init_large_stack_size() const;
         std::ptrdiff_t init_huge_stack_size() const;
 
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
         bool init_use_stack_guard_pages() const;
 #endif
 

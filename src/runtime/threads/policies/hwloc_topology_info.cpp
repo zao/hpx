@@ -401,7 +401,7 @@ namespace hpx { namespace threads
                 }
             }
         }
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
         sleep(0);   // Allow the OS to pick up the change.
 #endif
         hwloc_bitmap_free(cpuset);

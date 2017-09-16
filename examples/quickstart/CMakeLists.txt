@@ -124,3 +124,6 @@ foreach(example_program ${example_programs})
                               ${example_program}_exe)
 endforeach()
 
+if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD" OR "${CMAKE_SYSTEM_NAME}" MATCHES "DragonFly")
+  target_link_libraries(init_globally_exe PRIVATE "-lkvm")
+endif()

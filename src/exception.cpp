@@ -47,7 +47,7 @@
 #ifdef __APPLE__
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 HPX_EXPORT char** freebsd_environ = nullptr;
 #elif !defined(HPX_WINDOWS)
 extern char **environ;
@@ -194,7 +194,7 @@ namespace hpx { namespace detail
         std::size_t len = get_arraylen(environ);
         env.reserve(len);
         std::copy(&environ[0], &environ[len], std::back_inserter(env));
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
         std::size_t len = get_arraylen(freebsd_environ);
         env.reserve(len);
         std::copy(&freebsd_environ[0], &freebsd_environ[len],

@@ -47,7 +47,7 @@
 #include <hpx/util/get_and_reset_value.hpp>
 #include <hpx/util/unused.hpp>
 
-#if defined(__FreeBSD__) || (defined(_XOPEN_UNIX) && defined(_XOPEN_VERSION) \
+#if defined(__FreeBSD__) || defined(__DragonFly__) || (defined(_XOPEN_UNIX) && defined(_XOPEN_VERSION) \
             && _XOPEN_VERSION >= 500)
 
 // OS X 10.4 -- despite passing the test above -- doesn't support

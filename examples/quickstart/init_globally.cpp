@@ -60,6 +60,51 @@ inline int get_arraylen(char** argv)
 int __argc = get_arraylen(*_NSGetArgv());
 char** __argv = *_NSGetArgv();
 
+#elif defined(__FreeBSD__) or defined(__DragonFly__)
+
+#include <sys/types.h>
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>
+
+#include <memory>
+
+struct command_line_args
+{
+    ~command_line_args()
+    {
+        for (auto arg : argv)
+        {
+            free(arg);
+        }
+    }
+
+    std::vector<char*> argv;
+};
+
+static std::unique_ptr<command_line_args> get_process_args()
+{
+    kvm_t* kd = kvm_open(nullptr, "/dev/null", nullptr, 0, nullptr);
+    int cnt = 0;
+    struct kinfo_proc* pp = kvm_getprocs(kd, KERN_PROC_PID, getpid(), &cnt);
+    char** argv = kvm_getargv(kd, pp, 0);
+
+    auto ret = std::make_unique<command_line_args>();
+    while (*argv)
+    {
+        ret->argv.push_back(strdup(*argv++));
+    }
+    ret->argv.push_back(nullptr);
+
+    kvm_close(kd);
+    return ret;
+}
+
+static std::unique_ptr<command_line_args> args = get_process_args();
+int __argc = (int)args->argv.size() - 1;
+char** __argv = args->argv.data();
+
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////

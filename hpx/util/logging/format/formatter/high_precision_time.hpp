@@ -31,7 +31,7 @@
 #include <cstdint>
 #include <ctime>
 
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 #elif defined(HPX_MSVC)
 #else
 #include <hpx/lcos/local/spinlock.hpp>
@@ -94,7 +94,7 @@ template<class convert = do_convert_format::prepend> struct high_precision_time_
     {
         std::time_t tt = std::chrono::system_clock::to_time_t(val);
 
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
         std::tm local_tm;
         localtime_r(&tt, &local_tm);
 #elif defined(HPX_MSVC)

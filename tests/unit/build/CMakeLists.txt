@@ -105,7 +105,7 @@ create_cmake_test(
 )
 
 find_package(PkgConfig)
-if(PKGCONFIG_FOUND AND NOT MSVC)
+if(PKGCONFIG_FOUND AND NOT MSVC AND NOT "${CMAKE_SYSTEM_NAME}" MATCHES "DragonFly")
   create_pkgconfig_test(
     pkgconfig_build_dir_test
     "${CMAKE_BINARY_DIR}/lib/pkgconfig")
@@ -120,7 +120,7 @@ set(tests
   install_dir_)
 
 set(build_systems cmake)
-if(NOT CMAKE_TOOLCHAIN_FILE AND PKGCONFIG_FOUND AND NOT MSVC)
+if(NOT CMAKE_TOOLCHAIN_FILE AND PKGCONFIG_FOUND AND NOT MSVC AND NOT "${CMAKE_SYSTEM_NAME}" MATCHES "DragonFly")
   set(build_systems ${build_systems} pkgconfig)
 endif()
 

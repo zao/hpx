@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 extern HPX_EXPORT char** freebsd_environ;
 extern char** environ;
 #endif
@@ -69,7 +69,7 @@ namespace hpx
         detail::init_winsocket();
 #endif
         util::set_hpx_prefix(HPX_PREFIX);
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
         freebsd_environ = environ;
 #endif
         return 0 == detail::run_or_start(f, desc_cmdline, argc, argv,

@@ -12,6 +12,10 @@ if(HPX_WITH_DEFAULT_TARGETS)
     HEADER_ROOT ${root}
     AUTOGLOB
     PLUGIN)
+
+  if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD" OR "${CMAKE_SYSTEM_NAME}" MATCHES "DragonFly")
+    target_link_libraries(memory_component PRIVATE "-lkvm")
+  endif()
 endif()
 
 add_hpx_pseudo_dependencies(components.performance_counters_.memory

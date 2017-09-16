@@ -20,7 +20,7 @@
 #  include <vector>
 #elif __APPLE__
 #  include <mach-o/dyld.h>
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 #  include <sys/types.h>
 #  include <sys/sysctl.h>
 #  include <vector>
@@ -225,7 +225,7 @@ namespace hpx { namespace util
         exe_path[len-1] = '\0';
         r = exe_path;
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
         HPX_UNUSED(argv0);
 
         int mib[] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
