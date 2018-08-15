@@ -323,7 +323,7 @@ namespace hpx { namespace util { namespace plugin {
             using boost::filesystem::path;
             std::string result;
 
-#if !defined(__ANDROID__) && !defined(ANDROID) && !defined(__APPLE__)
+#if !defined(__ANDROID__) && !defined(ANDROID) && !defined(__APPLE__) && !defined(__NetBSD__)
             char directory[PATH_MAX] = { '\0' };
             const_cast<dll&>(*this).LoadLibrary(ec);
             if (!ec && ::dlinfo(dll_handle, RTLD_DI_ORIGIN, directory) < 0) {
@@ -361,6 +361,23 @@ namespace hpx { namespace util { namespace plugin {
                                       << result << std::endl;
                             break;
                         }
+                    }
+                }
+            }
+            ::dlerror();                // Clear the error state.
+#elif defined(__NetBSD__)
+            const_cast<dll&>(*this).LoadLibrary(ec);
+            if (!ec) {
+                void* end_sym = dlsym(dll_handle, "_end");
+                if (end_sym) {
+                    Dl_info sym_info = {};
+                    if (dladdr(end_sym, &sym_info) < 0) {
+                        char const* fname = sym_info.dli_fname;
+                        char const* last_slash = strrchr(fname, '/');
+                        while (last_slash > fname && *last_slash == '/') {
+                            --last_slash;
+                        }
+                        result = std::string(fname, last_slash);
                     }
                 }
             }

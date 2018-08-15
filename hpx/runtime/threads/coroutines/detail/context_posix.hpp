@@ -53,7 +53,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(__FreeBSD__) || (defined(_XOPEN_UNIX) && defined(_XOPEN_VERSION) \
+#if defined(__FreeBSD__) || defined(__NetBSD__) || (defined(_XOPEN_UNIX) && defined(_XOPEN_VERSION) \
             && _XOPEN_VERSION >= 500)
 
 // OS X 10.4 -- despite passing the test above -- doesn't support

@@ -69,7 +69,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 #if defined(__linux) || defined(linux) || defined(__linux__)\
-         || defined(__FreeBSD__) || defined(__APPLE__)
+         || defined(__FreeBSD__) || defined(__APPLE__) || defined(__NetBSD__)
 namespace hpx { namespace threads { namespace coroutines { namespace detail
 {
     namespace posix
@@ -232,7 +232,7 @@ namespace hpx { namespace util
                 HPX_PP_STRINGIZE(HPX_PP_EXPAND(HPX_LARGE_STACK_SIZE)) "}",
             "huge_size = ${HPX_HUGE_STACK_SIZE:"
                 HPX_PP_STRINGIZE(HPX_PP_EXPAND(HPX_HUGE_STACK_SIZE)) "}",
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
             "use_guard_pages = ${HPX_USE_GUARD_PAGES:1}",
 #endif
 
@@ -517,7 +517,7 @@ namespace hpx { namespace util
         HPX_ASSERT(init_huge_stack_size() <= HPX_HUGE_STACK_SIZE);
         huge_stacksize = init_huge_stack_size();
 
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
         threads::coroutines::detail::posix::use_guard_pages =
             init_use_stack_guard_pages();
 #endif
@@ -578,7 +578,7 @@ namespace hpx { namespace util
         large_stacksize = init_large_stack_size();
         huge_stacksize = init_huge_stack_size();
 
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
         threads::coroutines::detail::posix::use_guard_pages =
             init_use_stack_guard_pages();
 #endif
@@ -945,7 +945,7 @@ namespace hpx { namespace util
         return defaultvalue;
     }
 
-#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__)
+#if defined(__linux) || defined(linux) || defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__)
     bool runtime_configuration::init_use_stack_guard_pages() const
     {
         if (has_section("hpx")) {

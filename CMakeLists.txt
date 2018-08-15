@@ -1227,7 +1227,7 @@ if(NOT WIN32)
     endif()
   endif()
 
-  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
     hpx_libraries(dl)
   endif()
 

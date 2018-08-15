@@ -64,6 +64,11 @@
 #define EXEC_PAGESIZE PAGE_SIZE
 #endif
 
+#if defined(__NetBSD__)
+#include <machine/param.h>
+#define EXEC_PAGESIZE NBPG
+#endif
+
 #if defined(__APPLE__)
 #include <unistd.h>
 #define EXEC_PAGESIZE static_cast<std::size_t>(sysconf(_SC_PAGESIZE))
