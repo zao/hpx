@@ -321,6 +321,10 @@ namespace hpx { namespace threads
 
         std::size_t init_core_number(std::size_t num_thread)
         {
+            if (shallow_topology_)
+            {
+                return num_thread;
+            }
             return init_node_number(num_thread, HWLOC_OBJ_CORE);
         }
 
@@ -349,6 +353,7 @@ namespace hpx { namespace threads
                 get_core_number(num_thread), default_mask);
         }
 
+        void detect_shallow_topology();
         void init_num_of_pus();
 
         hwloc_topology_t topo;
@@ -365,6 +370,7 @@ namespace hpx { namespace threads
 #endif
 
         std::size_t num_of_pus_;
+        bool shallow_topology_;
 
         mutable hpx::util::spinlock topo_mtx;
 

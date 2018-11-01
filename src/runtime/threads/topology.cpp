@@ -206,6 +206,7 @@ namespace hpx { namespace threads
                 "Failed to load hwloc topology");
         }
 
+        detect_shallow_topology();
         init_num_of_pus();
 
         socket_numbers_.reserve(num_of_pus_);
@@ -271,6 +272,8 @@ namespace hpx { namespace threads
         {
             thread_affinity_masks_.push_back(init_thread_affinity_mask(i));
         }
+
+        write_to_log();
     } // }}}
 
     void topology::write_to_log() const
@@ -315,6 +318,12 @@ namespace hpx { namespace threads
         ) const
     { // {{{
         std::unique_lock<hpx::util::spinlock> lk(topo_mtx);
+
+        if (shallow_topology_)
+        {
+            hwloc_obj_t pu_obj = hwloc_get_obj_by_type(topo, HWLOC_OBJ_PU, static_cast<unsigned>(num_pu));
+            return pu_obj->logical_index;
+        }
 
         int num_cores = hwloc_get_nbobjs_by_type(topo, HWLOC_OBJ_CORE);
 
@@ -659,6 +668,11 @@ namespace hpx { namespace threads
 
     std::size_t topology::get_number_of_sockets() const
     {
+        if (shallow_topology_)
+        {
+            return 1;
+        }
+
         int nobjs = hwloc_get_nbobjs_by_type(topo, HWLOC_OBJ_SOCKET);
         if(0 > nobjs)
         {
@@ -772,6 +786,11 @@ namespace hpx { namespace threads
     {
         hwloc_obj_t core_obj = nullptr;
 
+        if (shallow_topology_)
+        {
+            return 1;
+        }
+
         {
             std::unique_lock<hpx::util::spinlock> lk(topo_mtx);
             core_obj = hwloc_get_obj_by_type(topo,
@@ -824,9 +843,9 @@ namespace hpx { namespace threads
         if (node_obj)
         {
             HPX_ASSERT(numa_node == detail::get_index(node_obj));
-            std::size_t pu_count = 0;
+            std::size_t core_count = 0;
             node_obj = detail::adjust_node_obj(node_obj);
-            return extract_node_count(node_obj, HWLOC_OBJ_CORE, pu_count);
+            return extract_node_count(node_obj, HWLOC_OBJ_CORE, core_count);
         }
 
         return get_number_of_cores();
@@ -1016,6 +1035,14 @@ namespace hpx { namespace threads
         if (std::size_t(-1) == core)
             return default_mask;
 
+        if (shallow_topology_)
+        {
+            mask_type mask = mask_type();
+            resize(mask, num_of_pus_);
+            set(mask, core);
+            return mask;
+        }
+
         hwloc_obj_t core_obj = nullptr;
 
         std::size_t num_core = (core + core_offset) % get_number_of_cores();
@@ -1080,6 +1107,18 @@ namespace hpx { namespace threads
     { // {{{
         hwloc_obj_t obj = nullptr;
 
+        if (shallow_topology_)
+        {
+            obj = hwloc_get_obj_by_type(topo, HWLOC_OBJ_PU,
+                    static_cast<unsigned>(num_pu));
+
+            mask_type mask = mask_type();
+            resize(mask, get_number_of_pus());
+            set(mask, detail::get_index(obj));
+
+            return mask;
+        }
+
         {
             std::unique_lock<hpx::util::spinlock> lk(topo_mtx);
             int num_cores = hwloc_get_nbobjs_by_type(topo, HWLOC_OBJ_CORE);
@@ -1112,6 +1151,14 @@ namespace hpx { namespace threads
 
         return mask;
     } // }}}
+
+    ///////////////////////////////////////////////////////////////////////////
+    void topology::detect_shallow_topology()
+    {
+        std::unique_lock<hpx::util::spinlock> lk(topo_mtx);
+        int num_of_cores = hwloc_get_nbobjs_by_type(topo, HWLOC_OBJ_CORE);
+        shallow_topology_ = (num_of_cores == 0);
+    }
 
     ///////////////////////////////////////////////////////////////////////////
     void topology::init_num_of_pus()
